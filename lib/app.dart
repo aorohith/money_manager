@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/theme.dart';
 import 'features/auth/providers/auth_provider.dart';
+import 'features/transactions/domain/providers/transaction_providers.dart';
 
 class App extends ConsumerStatefulWidget {
   const App({super.key});
@@ -21,6 +22,8 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Seed default categories & accounts on first launch
+    ref.read(dbSeederProvider);
   }
 
   @override

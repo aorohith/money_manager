@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
 
 import 'app.dart';
 import 'core/database/isar_service.dart';
+import 'features/transactions/data/models/account_model.dart';
+import 'features/transactions/data/models/category_model.dart';
+import 'features/transactions/data/models/transaction_model.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Open Isar with no schemas for now; schemas are added in Sprint 3+
-  final isar = await IsarService.open(<CollectionSchema<dynamic>>[]);
+  final isar = await IsarService.open([
+    TransactionModelSchema,
+    CategoryModelSchema,
+    AccountModelSchema,
+  ]);
 
   runApp(
     ProviderScope(

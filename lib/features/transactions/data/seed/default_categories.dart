@@ -1,0 +1,156 @@
+import 'package:flutter/material.dart';
+
+import '../models/category_model.dart';
+
+List<CategoryModel> get defaultCategories => [
+      // ── Expense categories (16) ─────────────────────────────────────────
+      CategoryModel(
+        name: 'Food & Dining',
+        iconCodePoint: Icons.restaurant_rounded.codePoint,
+        colorValue: const Color(0xFFEF5350).toARGB32(),
+        isIncome: false,
+        isDefault: true,
+      ),
+      CategoryModel(
+        name: 'Transport',
+        iconCodePoint: Icons.directions_car_rounded.codePoint,
+        colorValue: const Color(0xFF42A5F5).toARGB32(),
+        isIncome: false,
+        isDefault: true,
+      ),
+      CategoryModel(
+        name: 'Shopping',
+        iconCodePoint: Icons.shopping_bag_rounded.codePoint,
+        colorValue: const Color(0xFFEC407A).toARGB32(),
+        isIncome: false,
+        isDefault: true,
+      ),
+      CategoryModel(
+        name: 'Health',
+        iconCodePoint: Icons.local_hospital_rounded.codePoint,
+        colorValue: const Color(0xFF66BB6A).toARGB32(),
+        isIncome: false,
+        isDefault: true,
+      ),
+      CategoryModel(
+        name: 'Entertainment',
+        iconCodePoint: Icons.movie_rounded.codePoint,
+        colorValue: const Color(0xFFAB47BC).toARGB32(),
+        isIncome: false,
+        isDefault: true,
+      ),
+      CategoryModel(
+        name: 'Education',
+        iconCodePoint: Icons.school_rounded.codePoint,
+        colorValue: const Color(0xFF5C6BC0).toARGB32(),
+        isIncome: false,
+        isDefault: true,
+      ),
+      CategoryModel(
+        name: 'Utilities',
+        iconCodePoint: Icons.bolt_rounded.codePoint,
+        colorValue: const Color(0xFFFFA726).toARGB32(),
+        isIncome: false,
+        isDefault: true,
+      ),
+      CategoryModel(
+        name: 'Rent & Housing',
+        iconCodePoint: Icons.home_work_rounded.codePoint,
+        colorValue: const Color(0xFF26A69A).toARGB32(),
+        isIncome: false,
+        isDefault: true,
+      ),
+      CategoryModel(
+        name: 'Travel',
+        iconCodePoint: Icons.flight_rounded.codePoint,
+        colorValue: const Color(0xFF29B6F6).toARGB32(),
+        isIncome: false,
+        isDefault: true,
+      ),
+      CategoryModel(
+        name: 'Clothing',
+        iconCodePoint: Icons.checkroom_rounded.codePoint,
+        colorValue: const Color(0xFFFF7043).toARGB32(),
+        isIncome: false,
+        isDefault: true,
+      ),
+      CategoryModel(
+        name: 'Gifts',
+        iconCodePoint: Icons.card_giftcard_rounded.codePoint,
+        colorValue: const Color(0xFFE91E63).toARGB32(),
+        isIncome: false,
+        isDefault: true,
+      ),
+      CategoryModel(
+        name: 'Sports & Fitness',
+        iconCodePoint: Icons.sports_basketball_rounded.codePoint,
+        colorValue: const Color(0xFF8D6E63).toARGB32(),
+        isIncome: false,
+        isDefault: true,
+      ),
+      CategoryModel(
+        name: 'Beauty & Care',
+        iconCodePoint: Icons.face_retouching_natural_rounded.codePoint,
+        colorValue: const Color(0xFFF06292).toARGB32(),
+        isIncome: false,
+        isDefault: true,
+      ),
+      CategoryModel(
+        name: 'Pets',
+        iconCodePoint: Icons.pets_rounded.codePoint,
+        colorValue: const Color(0xFF795548).toARGB32(),
+        isIncome: false,
+        isDefault: true,
+      ),
+      CategoryModel(
+        name: 'Subscriptions',
+        iconCodePoint: Icons.subscriptions_rounded.codePoint,
+        colorValue: const Color(0xFF7E57C2).toARGB32(),
+        isIncome: false,
+        isDefault: true,
+      ),
+      CategoryModel(
+        name: 'Other',
+        iconCodePoint: Icons.category_rounded.codePoint,
+        colorValue: const Color(0xFF78909C).toARGB32(),
+        isIncome: false,
+        isDefault: true,
+      ),
+
+      // ── Income categories (5) ────────────────────────────────────────────
+      CategoryModel(
+        name: 'Salary',
+        iconCodePoint: Icons.work_rounded.codePoint,
+        colorValue: const Color(0xFF1B8A4D).toARGB32(),
+        isIncome: true,
+        isDefault: true,
+      ),
+      CategoryModel(
+        name: 'Freelance',
+        iconCodePoint: Icons.laptop_rounded.codePoint,
+        colorValue: const Color(0xFF00897B).toARGB32(),
+        isIncome: true,
+        isDefault: true,
+      ),
+      CategoryModel(
+        name: 'Investment',
+        iconCodePoint: Icons.trending_up_rounded.codePoint,
+        colorValue: const Color(0xFF43A047).toARGB32(),
+        isIncome: true,
+        isDefault: true,
+      ),
+      CategoryModel(
+        name: 'Business',
+        iconCodePoint: Icons.business_center_rounded.codePoint,
+        colorValue: const Color(0xFF00ACC1).toARGB32(),
+        isIncome: true,
+        isDefault: true,
+      ),
+      CategoryModel(
+        name: 'Rental Income',
+        iconCodePoint: Icons.real_estate_agent_rounded.codePoint,
+        colorValue: const Color(0xFF558B2F).toARGB32(),
+        isIncome: true,
+        isDefault: true,
+      ),
+    ];
