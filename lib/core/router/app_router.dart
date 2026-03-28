@@ -12,6 +12,7 @@ import '../../features/onboarding/presentation/currency_setup_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/onboarding/presentation/profile_setup_screen.dart';
 import '../../features/onboarding/presentation/splash_screen.dart';
+import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/transactions/presentation/screens/transactions_screen.dart';
 
 part 'app_routes.dart';
@@ -84,7 +85,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutes.dashboard,
             name: AppRouteNames.dashboard,
-            builder: (_, __) => const _StubScreen(label: 'Dashboard'),
+            builder: (_, __) => const DashboardScreen(),
           ),
           GoRoute(
             path: AppRoutes.transactions,
