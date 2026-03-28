@@ -1,123 +1,169 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/domain/auth_state.dart';
+import '../../features/auth/presentation/pin_lock_screen.dart';
+import '../../features/auth/presentation/pin_setup_screen.dart';
+import '../../features/auth/providers/auth_provider.dart';
 import '../../features/dev/theme_showcase_screen.dart';
+import '../../features/onboarding/presentation/currency_setup_screen.dart';
+import '../../features/onboarding/presentation/onboarding_screen.dart';
+import '../../features/onboarding/presentation/profile_setup_screen.dart';
+import '../../features/onboarding/presentation/splash_screen.dart';
 
 part 'app_routes.dart';
 
-final appRouter = GoRouter(
-  initialLocation: AppRoutes.splash,
-  debugLogDiagnostics: kDebugMode,
-  routes: [
-    GoRoute(
-      path: AppRoutes.splash,
-      name: AppRouteNames.splash,
-      builder: (context, state) => const _StubScreen(label: 'Splash'),
-    ),
-    GoRoute(
-      path: AppRoutes.onboarding,
-      name: AppRouteNames.onboarding,
-      builder: (context, state) => const _StubScreen(label: 'Onboarding'),
-    ),
-    GoRoute(
-      path: AppRoutes.currencySetup,
-      name: AppRouteNames.currencySetup,
-      builder: (context, state) => const _StubScreen(label: 'Currency Setup'),
-    ),
-    GoRoute(
-      path: AppRoutes.profileSetup,
-      name: AppRouteNames.profileSetup,
-      builder: (context, state) => const _StubScreen(label: 'Profile Setup'),
-    ),
-    GoRoute(
-      path: AppRoutes.pinSetup,
-      name: AppRouteNames.pinSetup,
-      builder: (context, state) => const _StubScreen(label: 'PIN Setup'),
-    ),
-    GoRoute(
-      path: AppRoutes.pinLock,
-      name: AppRouteNames.pinLock,
-      builder: (context, state) => const _StubScreen(label: 'PIN Lock'),
-    ),
-    ShellRoute(
-      builder: (context, state, child) => _AppShell(child: child),
-      routes: [
-        GoRoute(
-          path: AppRoutes.dashboard,
-          name: AppRouteNames.dashboard,
-          builder: (context, state) => const _StubScreen(label: 'Dashboard'),
-        ),
-        GoRoute(
-          path: AppRoutes.transactions,
-          name: AppRouteNames.transactions,
-          builder: (context, state) => const _StubScreen(label: 'Transactions'),
-          routes: [
-            GoRoute(
-              path: 'add',
-              name: AppRouteNames.addTransaction,
-              builder: (context, state) =>
-                  const _StubScreen(label: 'Add Transaction'),
-            ),
-            GoRoute(
-              path: ':id',
-              name: AppRouteNames.transactionDetail,
-              builder: (context, state) =>
-                  const _StubScreen(label: 'Transaction Detail'),
-            ),
-          ],
-        ),
-        GoRoute(
-          path: AppRoutes.budgets,
-          name: AppRouteNames.budgets,
-          builder: (context, state) => const _StubScreen(label: 'Budgets'),
-        ),
-        GoRoute(
-          path: AppRoutes.analytics,
-          name: AppRouteNames.analytics,
-          builder: (context, state) => const _StubScreen(label: 'Analytics'),
-        ),
-        GoRoute(
-          path: AppRoutes.goals,
-          name: AppRouteNames.goals,
-          builder: (context, state) => const _StubScreen(label: 'Goals'),
-          routes: [
-            GoRoute(
-              path: 'add',
-              name: AppRouteNames.addGoal,
-              builder: (context, state) =>
-                  const _StubScreen(label: 'Add Goal'),
-            ),
-            GoRoute(
-              path: ':id',
-              name: AppRouteNames.goalDetail,
-              builder: (context, state) =>
-                  const _StubScreen(label: 'Goal Detail'),
-            ),
-          ],
-        ),
-        GoRoute(
-          path: AppRoutes.insights,
-          name: AppRouteNames.insights,
-          builder: (context, state) => const _StubScreen(label: 'Insights'),
-        ),
-        GoRoute(
-          path: AppRoutes.settings,
-          name: AppRouteNames.settings,
-          builder: (context, state) => const _StubScreen(label: 'Settings'),
-        ),
-        if (kDebugMode)
-          GoRoute(
-            path: AppRoutes.themeShowcase,
-            name: AppRouteNames.themeShowcase,
-            builder: (context, state) => const ThemeShowcaseScreen(),
-          ),
-      ],
-    ),
-  ],
-);
+/// GoRouter exposed as a Riverpod provider so that the redirect guard can
+/// read [authProvider] through a proper [Ref], not [WidgetRef].
+final routerProvider = Provider<GoRouter>((ref) {
+  final router = GoRouter(
+    initialLocation: AppRoutes.splash,
+    debugLogDiagnostics: kDebugMode,
+    redirect: (context, state) {
+      final authAsync = ref.read(authProvider);
+      if (authAsync.isLoading || authAsync.hasError) return null;
 
-/// Temporary stub screen used until real screens are implemented.
+      final status = authAsync.value!;
+      final loc = state.uri.path;
+
+      const publicPaths = [
+        AppRoutes.splash,
+        AppRoutes.onboarding,
+        AppRoutes.currencySetup,
+        AppRoutes.profileSetup,
+        AppRoutes.pinSetup,
+        AppRoutes.pinLock,
+      ];
+      if (publicPaths.contains(loc)) return null;
+
+      return switch (status) {
+        AuthStatus.unauthenticated => AppRoutes.onboarding,
+        AuthStatus.pinSetup => AppRoutes.pinSetup,
+        AuthStatus.locked => AppRoutes.pinLock,
+        AuthStatus.authenticated => null,
+      };
+    },
+    refreshListenable: _AuthStatusListenable(ref),
+    routes: [
+      GoRoute(
+        path: AppRoutes.splash,
+        name: AppRouteNames.splash,
+        builder: (_, __) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.onboarding,
+        name: AppRouteNames.onboarding,
+        builder: (_, __) => const OnboardingScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.currencySetup,
+        name: AppRouteNames.currencySetup,
+        builder: (_, __) => const CurrencySetupScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.profileSetup,
+        name: AppRouteNames.profileSetup,
+        builder: (_, __) => const ProfileSetupScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.pinSetup,
+        name: AppRouteNames.pinSetup,
+        builder: (_, __) => const PinSetupScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.pinLock,
+        name: AppRouteNames.pinLock,
+        builder: (_, __) => const PinLockScreen(),
+      ),
+      ShellRoute(
+        builder: (context, state, child) => _AppShell(child: child),
+        routes: [
+          GoRoute(
+            path: AppRoutes.dashboard,
+            name: AppRouteNames.dashboard,
+            builder: (_, __) => const _StubScreen(label: 'Dashboard'),
+          ),
+          GoRoute(
+            path: AppRoutes.transactions,
+            name: AppRouteNames.transactions,
+            builder: (_, __) => const _StubScreen(label: 'Transactions'),
+            routes: [
+              GoRoute(
+                path: 'add',
+                name: AppRouteNames.addTransaction,
+                builder: (_, __) =>
+                    const _StubScreen(label: 'Add Transaction'),
+              ),
+              GoRoute(
+                path: ':id',
+                name: AppRouteNames.transactionDetail,
+                builder: (_, __) =>
+                    const _StubScreen(label: 'Transaction Detail'),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: AppRoutes.budgets,
+            name: AppRouteNames.budgets,
+            builder: (_, __) => const _StubScreen(label: 'Budgets'),
+          ),
+          GoRoute(
+            path: AppRoutes.analytics,
+            name: AppRouteNames.analytics,
+            builder: (_, __) => const _StubScreen(label: 'Analytics'),
+          ),
+          GoRoute(
+            path: AppRoutes.goals,
+            name: AppRouteNames.goals,
+            builder: (_, __) => const _StubScreen(label: 'Goals'),
+            routes: [
+              GoRoute(
+                path: 'add',
+                name: AppRouteNames.addGoal,
+                builder: (_, __) => const _StubScreen(label: 'Add Goal'),
+              ),
+              GoRoute(
+                path: ':id',
+                name: AppRouteNames.goalDetail,
+                builder: (_, __) => const _StubScreen(label: 'Goal Detail'),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: AppRoutes.insights,
+            name: AppRouteNames.insights,
+            builder: (_, __) => const _StubScreen(label: 'Insights'),
+          ),
+          GoRoute(
+            path: AppRoutes.settings,
+            name: AppRouteNames.settings,
+            builder: (_, __) => const _StubScreen(label: 'Settings'),
+          ),
+          if (kDebugMode)
+            GoRoute(
+              path: AppRoutes.themeShowcase,
+              name: AppRouteNames.themeShowcase,
+              builder: (_, __) => const ThemeShowcaseScreen(),
+            ),
+        ],
+      ),
+    ],
+  );
+  ref.onDispose(router.dispose);
+  return router;
+});
+
+/// Bridges Riverpod [authProvider] into a [Listenable] for GoRouter.
+class _AuthStatusListenable extends ChangeNotifier {
+  _AuthStatusListenable(Ref ref) {
+    ref.listen<AsyncValue<AuthStatus>>(authProvider, (_, __) {
+      notifyListeners();
+    });
+  }
+}
+
 class _StubScreen extends StatelessWidget {
   const _StubScreen({required this.label});
   final String label;
@@ -131,7 +177,6 @@ class _StubScreen extends StatelessWidget {
   }
 }
 
-/// Bottom navigation shell.
 class _AppShell extends StatelessWidget {
   const _AppShell({required this.child});
   final Widget child;
