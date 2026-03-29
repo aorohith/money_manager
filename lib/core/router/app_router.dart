@@ -13,6 +13,7 @@ import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/onboarding/presentation/profile_setup_screen.dart';
 import '../../features/onboarding/presentation/splash_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
+import '../../features/budgets/presentation/screens/budgets_screen.dart';
 import '../../features/transactions/presentation/screens/transactions_screen.dart';
 
 part 'app_routes.dart';
@@ -95,7 +96,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutes.budgets,
             name: AppRouteNames.budgets,
-            builder: (_, __) => const _StubScreen(label: 'Budgets'),
+            builder: (_, __) => const BudgetsScreen(),
           ),
           GoRoute(
             path: AppRoutes.analytics,

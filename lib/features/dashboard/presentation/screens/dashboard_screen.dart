@@ -8,6 +8,7 @@ import '../../../../core/widgets/widgets.dart';
 import '../../../auth/providers/auth_provider.dart';
 import '../../../transactions/presentation/widgets/add_transaction_sheet.dart';
 import '../../../transactions/presentation/widgets/transaction_tile.dart';
+import '../../../budgets/domain/providers/budget_providers.dart';
 import '../../domain/providers/dashboard_providers.dart';
 import '../widgets/balance_card.dart';
 import '../widgets/spending_ring.dart';
@@ -76,6 +77,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   _QuickStatsRow(),
                   const SizedBox(height: AppSpacing.lg),
                   const SpendingRing(),
+                  const SizedBox(height: AppSpacing.lg),
+                  _BudgetHealthChip(),
                   const SizedBox(height: AppSpacing.lg),
                   _RecentTransactionsSection(),
                   const SizedBox(height: 100), // FAB clearance
@@ -392,6 +395,85 @@ class _StaggeredTileState extends State<_StaggeredTile>
     return FadeTransition(
       opacity: _fade,
       child: SlideTransition(position: _slide, child: widget.child),
+    );
+  }
+}
+
+// ── Budget Health Chip ────────────────────────────────────────────────────────
+
+class _BudgetHealthChip extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final overallAsync = ref.watch(overallBudgetProgressProvider);
+
+    return overallAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (overall) {
+        if (overall == null) return const SizedBox.shrink();
+        final pct = overall.percentage.clamp(0.0, 1.0);
+        final color = switch (overall.colorState) {
+          _ when overall.isOver => AppColors.budgetOver,
+          _ when overall.percentage >= 0.80 => AppColors.budgetHigh,
+          _ when overall.percentage >= 0.50 => AppColors.budgetMid,
+          _ => AppColors.budgetLow,
+        };
+        return Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenPadding),
+          child: Semantics(
+            label:
+                'Budget health: ${(pct * 100).toStringAsFixed(0)}% of overall budget used',
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: color.withAlpha(18),
+                borderRadius:
+                    BorderRadius.circular(AppSpacing.radiusMd),
+                border: Border.all(color: color.withAlpha(60)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.account_balance_wallet_rounded,
+                      size: 16, color: color),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Budget Health · ${(pct * 100).toStringAsFixed(0)}% used',
+                          style:
+                              Theme.of(context).textTheme.labelMedium?.copyWith(
+                                    color: color,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                        ),
+                        LinearProgressIndicator(
+                          value: pct,
+                          backgroundColor: color.withAlpha(30),
+                          valueColor: AlwaysStoppedAnimation(color),
+                          minHeight: 4,
+                          borderRadius:
+                              BorderRadius.circular(AppSpacing.radiusFull),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    overall.statusLabel.replaceAll(' 🎯', ''),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: color,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
