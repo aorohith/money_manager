@@ -8,10 +8,12 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     required this.expenseColor,
     required this.expenseSurface,
     required this.cardSurface,
+    required this.cardBorder,
     required this.shimmerBase,
     required this.shimmerHighlight,
     required this.successColor,
     required this.warningColor,
+    required this.gradientPrimary,
   });
 
   final Color incomeColor;
@@ -19,33 +21,47 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
   final Color expenseColor;
   final Color expenseSurface;
   final Color cardSurface;
+  final Color cardBorder;
   final Color shimmerBase;
   final Color shimmerHighlight;
   final Color successColor;
   final Color warningColor;
+  final LinearGradient gradientPrimary;
 
-  static const light = AppThemeExtension(
+  static final light = AppThemeExtension(
     incomeColor: AppColors.income,
     incomeSurface: AppColors.incomeLight,
     expenseColor: AppColors.expense,
     expenseSurface: AppColors.expenseLight,
-    cardSurface: Color(0xFFFFFFFF),
-    shimmerBase: Color(0xFFE0E0E0),
-    shimmerHighlight: Color(0xFFF5F5F5),
+    cardSurface: AppColors.surface,
+    cardBorder: AppColors.outline,
+    shimmerBase: const Color(0xFFE2E8F0),
+    shimmerHighlight: const Color(0xFFF8FAFC),
     successColor: AppColors.success,
     warningColor: AppColors.warning,
+    gradientPrimary: const LinearGradient(
+      colors: [AppColors.gradientStart, AppColors.gradientEnd],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ),
   );
 
-  static const dark = AppThemeExtension(
-    incomeColor: Color(0xFF4CAF82),
-    incomeSurface: Color(0xFF1B2E23),
-    expenseColor: Color(0xFFEF6B62),
-    expenseSurface: Color(0xFF2E1B1B),
-    cardSurface: Color(0xFF2C2C2E),
-    shimmerBase: Color(0xFF3A3A3C),
-    shimmerHighlight: Color(0xFF4A4A4C),
-    successColor: Color(0xFF4CAF82),
-    warningColor: Color(0xFFFBBF24),
+  static final dark = AppThemeExtension(
+    incomeColor: AppColors.incomeChip,
+    incomeSurface: AppColors.incomeDark,
+    expenseColor: AppColors.expenseChip,
+    expenseSurface: AppColors.expenseDark,
+    cardSurface: AppColors.surfaceDark,
+    cardBorder: AppColors.outlineDark,
+    shimmerBase: const Color(0xFF1A2540),
+    shimmerHighlight: const Color(0xFF243058),
+    successColor: AppColors.incomeChip,
+    warningColor: const Color(0xFFFBBF24),
+    gradientPrimary: const LinearGradient(
+      colors: [Color(0xFF0052FF), Color(0xFF1A3A7A)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ),
   );
 
   @override
@@ -55,10 +71,12 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     Color? expenseColor,
     Color? expenseSurface,
     Color? cardSurface,
+    Color? cardBorder,
     Color? shimmerBase,
     Color? shimmerHighlight,
     Color? successColor,
     Color? warningColor,
+    LinearGradient? gradientPrimary,
   }) {
     return AppThemeExtension(
       incomeColor: incomeColor ?? this.incomeColor,
@@ -66,10 +84,12 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
       expenseColor: expenseColor ?? this.expenseColor,
       expenseSurface: expenseSurface ?? this.expenseSurface,
       cardSurface: cardSurface ?? this.cardSurface,
+      cardBorder: cardBorder ?? this.cardBorder,
       shimmerBase: shimmerBase ?? this.shimmerBase,
       shimmerHighlight: shimmerHighlight ?? this.shimmerHighlight,
       successColor: successColor ?? this.successColor,
       warningColor: warningColor ?? this.warningColor,
+      gradientPrimary: gradientPrimary ?? this.gradientPrimary,
     );
   }
 
@@ -82,10 +102,14 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
       expenseColor: Color.lerp(expenseColor, other.expenseColor, t)!,
       expenseSurface: Color.lerp(expenseSurface, other.expenseSurface, t)!,
       cardSurface: Color.lerp(cardSurface, other.cardSurface, t)!,
+      cardBorder: Color.lerp(cardBorder, other.cardBorder, t)!,
       shimmerBase: Color.lerp(shimmerBase, other.shimmerBase, t)!,
-      shimmerHighlight: Color.lerp(shimmerHighlight, other.shimmerHighlight, t)!,
+      shimmerHighlight:
+          Color.lerp(shimmerHighlight, other.shimmerHighlight, t)!,
       successColor: Color.lerp(successColor, other.successColor, t)!,
       warningColor: Color.lerp(warningColor, other.warningColor, t)!,
+      gradientPrimary: LinearGradient.lerp(
+          gradientPrimary, other.gradientPrimary, t)!,
     );
   }
 }

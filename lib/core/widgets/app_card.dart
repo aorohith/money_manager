@@ -13,6 +13,7 @@ class AppCard extends StatelessWidget {
     this.borderRadius,
     this.elevation = 0,
     this.semanticLabel,
+    this.showBorder = true,
   });
 
   final Widget child;
@@ -23,29 +24,59 @@ class AppCard extends StatelessWidget {
   final BorderRadius? borderRadius;
   final double elevation;
   final String? semanticLabel;
+  final bool showBorder;
 
   @override
   Widget build(BuildContext context) {
     final ext = context.appTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final radius =
         borderRadius ?? BorderRadius.circular(AppSpacing.radiusLg);
 
     return Semantics(
       label: semanticLabel,
       button: onTap != null,
-      child: Card(
+      child: Container(
         margin: margin ?? EdgeInsets.zero,
-        elevation: elevation,
-        color: color ?? ext.cardSurface,
-        shape: RoundedRectangleBorder(borderRadius: radius),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
+        decoration: BoxDecoration(
+          color: color ?? ext.cardSurface,
           borderRadius: radius,
-          child: Padding(
-            padding: padding ??
-                const EdgeInsets.all(AppSpacing.cardPadding),
-            child: child,
+          border: showBorder
+              ? Border.all(
+                  color: isDark
+                      ? AppColors.outlineDark
+                      : AppColors.outline,
+                  width: 1,
+                )
+              : null,
+          boxShadow: elevation > 0
+              ? [
+                  BoxShadow(
+                    color: isDark
+                        ? Colors.black.withAlpha(60)
+                        : Colors.black.withAlpha(10),
+                    blurRadius: elevation * 4,
+                    spreadRadius: -1,
+                    offset: Offset(0, elevation),
+                  ),
+                ]
+              : null,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: radius,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: radius,
+            splashColor:
+                Theme.of(context).colorScheme.primary.withAlpha(12),
+            highlightColor:
+                Theme.of(context).colorScheme.primary.withAlpha(6),
+            child: Padding(
+              padding: padding ??
+                  const EdgeInsets.all(AppSpacing.cardPadding),
+              child: child,
+            ),
           ),
         ),
       ),

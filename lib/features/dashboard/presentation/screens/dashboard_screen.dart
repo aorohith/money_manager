@@ -48,7 +48,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Future<void> _onRefresh() async {
     HapticFeedback.mediumImpact();
-    // Invalidate dashboard to force re-fetch
     ref.invalidate(dashboardProvider);
     await Future.delayed(const Duration(milliseconds: 500));
   }
@@ -56,17 +55,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final profileName = ref.watch(profileNameProvider).valueOrNull ?? '';
-    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _onRefresh,
-        color: scheme.primary,
+        color: AppColors.brand,
+        backgroundColor:
+            isDark ? AppColors.surfaceDark : AppColors.surface,
         child: CustomScrollView(
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            _buildAppBar(context, profileName, scheme),
+            _buildAppBar(context, profileName),
             SliverToBoxAdapter(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,10 +79,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   const SizedBox(height: AppSpacing.lg),
                   const SpendingRing(),
                   const SizedBox(height: AppSpacing.lg),
-                  _BudgetHealthChip(),
+                  _BudgetHealthBanner(),
                   const SizedBox(height: AppSpacing.lg),
                   _RecentTransactionsSection(),
-                  const SizedBox(height: 100), // FAB clearance
+                  const SizedBox(height: 100),
                 ],
               ),
             ),
@@ -94,43 +95,82 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         child: AnimatedOpacity(
           duration: AppDurations.standard,
           opacity: _fabVisible ? 1.0 : 0.0,
-          child: FloatingActionButton.extended(
+          child: _GradientFAB(
             onPressed: () => showAddTransactionSheet(context),
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Add'),
-            backgroundColor: scheme.primary,
-            foregroundColor: scheme.onPrimary,
           ),
         ),
       ),
     );
   }
 
-  SliverAppBar _buildAppBar(
-      BuildContext context, String profileName, ColorScheme scheme) {
+  SliverAppBar _buildAppBar(BuildContext context, String profileName) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final firstName =
+        profileName.isNotEmpty ? profileName.split(' ').first : 'there';
+    final initials = profileName.isNotEmpty
+        ? profileName
+            .split(' ')
+            .take(2)
+            .map((w) => w[0].toUpperCase())
+            .join()
+        : 'U';
+
     return SliverAppBar(
       floating: true,
       snap: true,
       elevation: 0,
-      backgroundColor: scheme.surface,
+      scrolledUnderElevation: 0,
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : AppColors.background,
       surfaceTintColor: Colors.transparent,
       title: Row(
         children: [
+          // Avatar
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppColors.brand, AppColors.brandLight],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(
+                initials,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm + 2),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                profileName.isNotEmpty
-                    ? 'Hello, ${profileName.split(' ').first} 👋'
-                    : 'Hello 👋',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+                'Hello, $firstName',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
+                      letterSpacing: -0.2,
                     ),
               ),
               Text(
-                'Your financial overview',
+                'Financial overview',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondary,
+                      fontWeight: FontWeight.w400,
                     ),
               ),
             ],
@@ -138,13 +178,94 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ],
       ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.notifications_outlined),
-          onPressed: () {},
-          tooltip: 'Notifications',
-        ),
+        _NotificationButton(),
         const SizedBox(width: AppSpacing.xs),
       ],
+    );
+  }
+}
+
+// ── Notification Button ───────────────────────────────────────────────────────
+
+class _NotificationButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.only(right: 4),
+      child: IconButton(
+        icon: Icon(
+          Icons.notifications_outlined,
+          size: 22,
+          color: isDark
+              ? AppColors.textSecondaryDark
+              : AppColors.textSecondary,
+        ),
+        onPressed: () {},
+        tooltip: 'Notifications',
+        style: IconButton.styleFrom(
+          backgroundColor: isDark
+              ? AppColors.outlineDark
+              : AppColors.surfaceVariant,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          minimumSize: const Size(40, 40),
+          padding: const EdgeInsets.all(AppSpacing.xs + 2),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Gradient FAB ──────────────────────────────────────────────────────────────
+
+class _GradientFAB extends StatelessWidget {
+  const _GradientFAB({required this.onPressed});
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onPressed();
+      },
+      child: Container(
+        height: 52,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [AppColors.brand, AppColors.brandLight],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.brand.withAlpha(80),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.add_rounded, color: Colors.white, size: 20),
+            SizedBox(width: 6),
+            Text(
+              'Add',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -157,7 +278,7 @@ class _QuickStatsRow extends ConsumerWidget {
     final data = ref.watch(dashboardProvider).valueOrNull;
     final currencySymbol =
         ref.watch(currencySymbolProvider).valueOrNull ?? '\$';
-    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding:
@@ -165,35 +286,38 @@ class _QuickStatsRow extends ConsumerWidget {
       child: Row(
         children: [
           Expanded(
-            child: _QuickStatCard(
+            child: _StatCard(
               label: 'Today',
               value: data == null
                   ? '—'
                   : '$currencySymbol${_fmt(data.todayExpense)}',
               icon: Icons.today_rounded,
-              color: scheme.tertiary,
+              accentColor: AppColors.brand,
+              isDark: isDark,
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
-            child: _QuickStatCard(
+            child: _StatCard(
               label: 'This Week',
               value: data == null
                   ? '—'
                   : '$currencySymbol${_fmt(data.weekExpense)}',
               icon: Icons.date_range_rounded,
-              color: scheme.primary,
+              accentColor: const Color(0xFF8B5CF6),
+              isDark: isDark,
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
-            child: _QuickStatCard(
-              label: 'Transactions',
+            child: _StatCard(
+              label: 'Txns',
               value: data == null
                   ? '—'
                   : '${data.recentTransactions.length}',
               icon: Icons.receipt_long_rounded,
-              color: scheme.secondary,
+              accentColor: AppColors.income,
+              isDark: isDark,
             ),
           ),
         ],
@@ -208,45 +332,68 @@ class _QuickStatsRow extends ConsumerWidget {
   }
 }
 
-class _QuickStatCard extends StatelessWidget {
-  const _QuickStatCard({
+class _StatCard extends StatelessWidget {
+  const _StatCard({
     required this.label,
     required this.value,
     required this.icon,
-    required this.color,
+    required this.accentColor,
+    required this.isDark,
   });
 
   final String label;
   final String value;
   final IconData icon;
-  final Color color;
+  final Color accentColor;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm, vertical: AppSpacing.sm + 2),
+        horizontal: AppSpacing.sm + 2,
+        vertical: AppSpacing.sm + 4,
+      ),
       decoration: BoxDecoration(
-        color: color.withAlpha(20),
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        border: Border.all(
+          color: isDark ? AppColors.outlineDark : AppColors.outline,
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: color),
-          const SizedBox(height: 4),
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: accentColor.withAlpha(18),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 14, color: accentColor),
+          ),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             value,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: color,
-                ),
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+              letterSpacing: -0.3,
+            ),
           ),
+          const SizedBox(height: 1),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w400,
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -260,6 +407,7 @@ class _RecentTransactionsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(dashboardProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,21 +420,45 @@ class _RecentTransactionsSection extends ConsumerWidget {
             children: [
               Text(
                 'Recent Transactions',
-                style:
-                    Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
+                      letterSpacing: -0.2,
+                    ),
               ),
               TextButton(
-                onPressed: () {
-                  // Navigate to full transactions screen
-                },
-                child: const Text('See all'),
+                onPressed: () {},
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.brand,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: 4,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'See all',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: AppColors.brand,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(width: 2),
+                    const Icon(Icons.chevron_right_rounded,
+                        size: 16, color: AppColors.brand),
+                  ],
+                ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: AppSpacing.sm),
         data.when(
           data: (d) {
             if (d.recentTransactions.isEmpty) {
@@ -296,7 +468,7 @@ class _RecentTransactionsSection extends ConsumerWidget {
                 child: EmptyState(
                   icon: Icons.receipt_long_outlined,
                   title: 'No transactions yet',
-                  subtitle: 'Tap + Add to record your first transaction.',
+                  subtitle: 'Tap Add to record your first transaction.',
                 ),
               );
             }
@@ -315,14 +487,15 @@ class _RecentTransactionsSection extends ConsumerWidget {
                 horizontal: AppSpacing.screenPadding),
             child: Column(
               children: List.generate(
-                  3,
-                  (_) => const Padding(
-                        padding: EdgeInsets.only(bottom: AppSpacing.sm),
-                        child: ShimmerBox(
-                            width: double.infinity,
-                            height: 72,
-                            borderRadius: 12),
-                      )),
+                3,
+                (_) => const Padding(
+                  padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: ShimmerBox(
+                      width: double.infinity,
+                      height: 68,
+                      borderRadius: 14),
+                ),
+              ),
             ),
           ),
           error: (_, __) => const SizedBox.shrink(),
@@ -333,10 +506,8 @@ class _RecentTransactionsSection extends ConsumerWidget {
 
   Widget _buildTile(WidgetRef ref, DashboardData d, int i) {
     final tx = d.recentTransactions[i];
-    final cat =
-        d.categories.where((c) => c.id == tx.categoryId).firstOrNull;
-    final symbol =
-        ref.read(currencySymbolProvider).valueOrNull ?? '\$';
+    final cat = d.categories.where((c) => c.id == tx.categoryId).firstOrNull;
+    final symbol = ref.read(currencySymbolProvider).valueOrNull ?? '\$';
     return TransactionTile(
       transaction: tx,
       category: cat,
@@ -345,7 +516,7 @@ class _RecentTransactionsSection extends ConsumerWidget {
   }
 }
 
-// ── Staggered slide-in animation ──────────────────────────────────────────────
+// ── Staggered slide-in ────────────────────────────────────────────────────────
 
 class _StaggeredTile extends StatefulWidget {
   const _StaggeredTile({required this.index, required this.child});
@@ -365,23 +536,15 @@ class _StaggeredTileState extends State<_StaggeredTile>
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: AppDurations.standard,
-    );
+    _ctrl = AnimationController(vsync: this, duration: AppDurations.standard);
     _slide = Tween<Offset>(
-      begin: const Offset(0, 0.3),
+      begin: const Offset(0, 0.25),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
     _fade = Tween<double>(begin: 0, end: 1).animate(_ctrl);
-
-    // Stagger by index
-    Future.delayed(
-      Duration(milliseconds: 80 * widget.index),
-      () {
-        if (mounted) _ctrl.forward();
-      },
-    );
+    Future.delayed(Duration(milliseconds: 60 * widget.index), () {
+      if (mounted) _ctrl.forward();
+    });
   }
 
   @override
@@ -399,74 +562,122 @@ class _StaggeredTileState extends State<_StaggeredTile>
   }
 }
 
-// ── Budget Health Chip ────────────────────────────────────────────────────────
+// ── Budget Health Banner ──────────────────────────────────────────────────────
 
-class _BudgetHealthChip extends ConsumerWidget {
+class _BudgetHealthBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final overallAsync = ref.watch(overallBudgetProgressProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return overallAsync.when(
       loading: () => const SizedBox.shrink(),
       error: (_, __) => const SizedBox.shrink(),
       data: (overall) {
         if (overall == null) return const SizedBox.shrink();
+
         final pct = overall.percentage.clamp(0.0, 1.0);
-        final color = switch (overall.colorState) {
+        final accent = switch (true) {
           _ when overall.isOver => AppColors.budgetOver,
           _ when overall.percentage >= 0.80 => AppColors.budgetHigh,
           _ when overall.percentage >= 0.50 => AppColors.budgetMid,
           _ => AppColors.budgetLow,
         };
+        final label = overall.statusLabel.replaceAll(' 🎯', '');
+
         return Padding(
           padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.screenPadding),
           child: Semantics(
             label:
-                'Budget health: ${(pct * 100).toStringAsFixed(0)}% of overall budget used',
+                'Budget health: ${(pct * 100).toStringAsFixed(0)}% used',
             child: Container(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm + 4,
+              ),
               decoration: BoxDecoration(
-                color: color.withAlpha(18),
+                color: isDark ? AppColors.surfaceDark : AppColors.surface,
                 borderRadius:
                     BorderRadius.circular(AppSpacing.radiusMd),
-                border: Border.all(color: color.withAlpha(60)),
+                border: Border.all(
+                  color: isDark ? AppColors.outlineDark : AppColors.outline,
+                ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.account_balance_wallet_rounded,
-                      size: 16, color: color),
-                  const SizedBox(width: AppSpacing.sm),
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: accent.withAlpha(20),
+                      borderRadius:
+                          BorderRadius.circular(AppSpacing.radiusSm),
+                    ),
+                    child: Icon(Icons.account_balance_wallet_rounded,
+                        size: 18, color: accent),
+                  ),
+                  const SizedBox(width: AppSpacing.sm + 2),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Budget Health · ${(pct * 100).toStringAsFixed(0)}% used',
-                          style:
-                              Theme.of(context).textTheme.labelMedium?.copyWith(
-                                    color: color,
+                        Row(
+                          mainAxisAlignment:
+                              MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Budget Health',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.copyWith(
                                     fontWeight: FontWeight.w600,
+                                    color: isDark
+                                        ? AppColors.textPrimaryDark
+                                        : AppColors.textPrimary,
                                   ),
+                            ),
+                            Text(
+                              '${(pct * 100).toStringAsFixed(0)}%',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: accent,
+                                  ),
+                            ),
+                          ],
                         ),
-                        LinearProgressIndicator(
-                          value: pct,
-                          backgroundColor: color.withAlpha(30),
-                          valueColor: AlwaysStoppedAnimation(color),
-                          minHeight: 4,
-                          borderRadius:
-                              BorderRadius.circular(AppSpacing.radiusFull),
+                        const SizedBox(height: 6),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                              AppSpacing.radiusFull),
+                          child: LinearProgressIndicator(
+                            value: pct,
+                            backgroundColor: isDark
+                                ? AppColors.outlineDark
+                                : AppColors.outline,
+                            valueColor:
+                                AlwaysStoppedAnimation(accent),
+                            minHeight: 5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          label,
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelSmall
+                              ?.copyWith(
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondary,
+                              ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Text(
-                    overall.statusLabel.replaceAll(' 🎯', ''),
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: color,
-                        ),
                   ),
                 ],
               ),
