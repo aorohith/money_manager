@@ -39,7 +39,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         AppRoutes.pinSetup,
         AppRoutes.pinLock,
       ];
-      if (publicPaths.contains(loc)) return null;
+      if (publicPaths.contains(loc)) {
+        // Once authenticated (PIN set or unlocked), leave the auth flow.
+        // Splash handles its own navigation, so skip it here.
+        if (status == AuthStatus.authenticated && loc != AppRoutes.splash) {
+          return AppRoutes.dashboard;
+        }
+        return null;
+      }
 
       return switch (status) {
         AuthStatus.unauthenticated => AppRoutes.onboarding,
