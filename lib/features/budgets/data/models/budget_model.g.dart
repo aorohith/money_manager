@@ -47,7 +47,7 @@ const BudgetModelSchema = CollectionSchema(
       id: 5,
       name: r'rolloverEnabled',
       type: IsarType.bool,
-    ),
+    )
   },
   estimateSize: _budgetModelEstimateSize,
   serialize: _budgetModelSerialize,
@@ -55,21 +55,8 @@ const BudgetModelSchema = CollectionSchema(
   deserializeProp: _budgetModelDeserializeProp,
   idName: r'id',
   indexes: {
-    r'month': IndexSchema(
-      id: 1234567890123456789,
-      name: r'month',
-      unique: false,
-      replace: false,
-      properties: [
-        IndexPropertySchema(
-          name: r'month',
-          type: IndexType.value,
-          caseSensitive: false,
-        )
-      ],
-    ),
     r'categoryId': IndexSchema(
-      id: 3456789012345678901,
+      id: -8798048739239305339,
       name: r'categoryId',
       unique: false,
       replace: false,
@@ -81,6 +68,19 @@ const BudgetModelSchema = CollectionSchema(
         )
       ],
     ),
+    r'month': IndexSchema(
+      id: -3594385961712742690,
+      name: r'month',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'month',
+          type: IndexType.value,
+          caseSensitive: false,
+        )
+      ],
+    )
   },
   links: {},
   embeddedSchemas: {},
@@ -89,17 +89,6 @@ const BudgetModelSchema = CollectionSchema(
   attach: _budgetModelAttach,
   version: '3.1.0+1',
 );
-
-const _BudgetModelperiodEnumValueMap = {
-  'monthly': 0,
-  'weekly': 1,
-  'yearly': 2,
-};
-const _BudgetModelperiodValueEnumMap = {
-  0: BudgetPeriod.monthly,
-  1: BudgetPeriod.weekly,
-  2: BudgetPeriod.yearly,
-};
 
 int _budgetModelEstimateSize(
   BudgetModel object,
@@ -116,7 +105,7 @@ void _budgetModelSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeLong(offsets[0], object.categoryId ?? -9223372036854775808);
+  writer.writeLong(offsets[0], object.categoryId);
   writer.writeDouble(offsets[1], object.limitAmount);
   writer.writeLong(offsets[2], object.month);
   writer.writeByte(offsets[3], object.period.index);
@@ -130,14 +119,13 @@ BudgetModel _budgetModelDeserialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  final long0 = reader.readLongOrNull(offsets[0]);
   final object = BudgetModel(
-    categoryId: long0 == -9223372036854775808 ? null : long0,
+    categoryId: reader.readLongOrNull(offsets[0]),
     limitAmount: reader.readDouble(offsets[1]),
     month: reader.readLong(offsets[2]),
     period: _BudgetModelperiodValueEnumMap[reader.readByteOrNull(offsets[3])] ??
         BudgetPeriod.monthly,
-    rolloverEnabled: reader.readBool(offsets[5]),
+    rolloverEnabled: reader.readBoolOrNull(offsets[5]) ?? false,
   );
   object.id = id;
   object.rolloverAmount = reader.readDouble(offsets[4]);
@@ -152,8 +140,7 @@ P _budgetModelDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      final long = reader.readLongOrNull(offset);
-      return (long == -9223372036854775808 ? null : long) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 1:
       return (reader.readDouble(offset)) as P;
     case 2:
@@ -164,11 +151,22 @@ P _budgetModelDeserializeProp<P>(
     case 4:
       return (reader.readDouble(offset)) as P;
     case 5:
-      return (reader.readBool(offset)) as P;
+      return (reader.readBoolOrNull(offset) ?? false) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
 }
+
+const _BudgetModelperiodEnumValueMap = {
+  'monthly': 0,
+  'weekly': 1,
+  'yearly': 2,
+};
+const _BudgetModelperiodValueEnumMap = {
+  0: BudgetPeriod.monthly,
+  1: BudgetPeriod.weekly,
+  2: BudgetPeriod.yearly,
+};
 
 Id _budgetModelGetId(BudgetModel object) {
   return object.id;
@@ -190,6 +188,22 @@ extension BudgetModelQueryWhereSort
       return query.addWhereClause(const IdWhereClause.any());
     });
   }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterWhere> anyCategoryId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'categoryId'),
+      );
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterWhere> anyMonth() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'month'),
+      );
+    });
+  }
 }
 
 extension BudgetModelQueryWhere
@@ -203,12 +217,261 @@ extension BudgetModelQueryWhere
     });
   }
 
+  QueryBuilder<BudgetModel, BudgetModel, QAfterWhereClause> idNotEqualTo(
+      Id id) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IdWhereClause.lessThan(upper: id, includeUpper: false),
+            )
+            .addWhereClause(
+              IdWhereClause.greaterThan(lower: id, includeLower: false),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IdWhereClause.greaterThan(lower: id, includeLower: false),
+            )
+            .addWhereClause(
+              IdWhereClause.lessThan(upper: id, includeUpper: false),
+            );
+      }
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterWhereClause> idGreaterThan(Id id,
+      {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IdWhereClause.greaterThan(lower: id, includeLower: include),
+      );
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterWhereClause> idLessThan(Id id,
+      {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IdWhereClause.lessThan(upper: id, includeUpper: include),
+      );
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterWhereClause> idBetween(
+    Id lowerId,
+    Id upperId, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IdWhereClause.between(
+        lower: lowerId,
+        includeLower: includeLower,
+        upper: upperId,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterWhereClause> categoryIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'categoryId',
+        value: [null],
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterWhereClause>
+      categoryIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'categoryId',
+        lower: [null],
+        includeLower: false,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterWhereClause> categoryIdEqualTo(
+      int? categoryId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'categoryId',
+        value: [categoryId],
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterWhereClause>
+      categoryIdNotEqualTo(int? categoryId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'categoryId',
+              lower: [],
+              upper: [categoryId],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'categoryId',
+              lower: [categoryId],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'categoryId',
+              lower: [categoryId],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'categoryId',
+              lower: [],
+              upper: [categoryId],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterWhereClause>
+      categoryIdGreaterThan(
+    int? categoryId, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'categoryId',
+        lower: [categoryId],
+        includeLower: include,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterWhereClause> categoryIdLessThan(
+    int? categoryId, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'categoryId',
+        lower: [],
+        upper: [categoryId],
+        includeUpper: include,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterWhereClause> categoryIdBetween(
+    int? lowerCategoryId,
+    int? upperCategoryId, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'categoryId',
+        lower: [lowerCategoryId],
+        includeLower: includeLower,
+        upper: [upperCategoryId],
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<BudgetModel, BudgetModel, QAfterWhereClause> monthEqualTo(
       int month) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IndexWhereClause.equalTo(
         indexName: r'month',
         value: [month],
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterWhereClause> monthNotEqualTo(
+      int month) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'month',
+              lower: [],
+              upper: [month],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'month',
+              lower: [month],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'month',
+              lower: [month],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'month',
+              lower: [],
+              upper: [month],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterWhereClause> monthGreaterThan(
+    int month, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'month',
+        lower: [month],
+        includeLower: include,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterWhereClause> monthLessThan(
+    int month, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'month',
+        lower: [],
+        upper: [month],
+        includeUpper: include,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterWhereClause> monthBetween(
+    int lowerMonth,
+    int upperMonth, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'month',
+        lower: [lowerMonth],
+        includeLower: includeLower,
+        upper: [upperMonth],
+        includeUpper: includeUpper,
       ));
     });
   }
@@ -245,7 +508,172 @@ extension BudgetModelQueryFilter
   }
 
   QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition>
-      monthEqualTo(int value) {
+      categoryIdGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'categoryId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition>
+      categoryIdLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'categoryId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition>
+      categoryIdBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'categoryId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition> idEqualTo(
+      Id value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'id',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition> idGreaterThan(
+    Id value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'id',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition> idLessThan(
+    Id value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'id',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition> idBetween(
+    Id lower,
+    Id upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'id',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition>
+      limitAmountEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'limitAmount',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition>
+      limitAmountGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'limitAmount',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition>
+      limitAmountLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'limitAmount',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition>
+      limitAmountBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'limitAmount',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition> monthEqualTo(
+      int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'month',
@@ -255,7 +683,51 @@ extension BudgetModelQueryFilter
   }
 
   QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition>
-      periodEqualTo(BudgetPeriod value) {
+      monthGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'month',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition> monthLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'month',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition> monthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'month',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition> periodEqualTo(
+      BudgetPeriod value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'period',
@@ -263,10 +735,160 @@ extension BudgetModelQueryFilter
       ));
     });
   }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition>
+      periodGreaterThan(
+    BudgetPeriod value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'period',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition> periodLessThan(
+    BudgetPeriod value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'period',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition> periodBetween(
+    BudgetPeriod lower,
+    BudgetPeriod upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'period',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition>
+      rolloverAmountEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'rolloverAmount',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition>
+      rolloverAmountGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'rolloverAmount',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition>
+      rolloverAmountLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'rolloverAmount',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition>
+      rolloverAmountBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'rolloverAmount',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition>
+      rolloverEnabledEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'rolloverEnabled',
+        value: value,
+      ));
+    });
+  }
 }
+
+extension BudgetModelQueryObject
+    on QueryBuilder<BudgetModel, BudgetModel, QFilterCondition> {}
+
+extension BudgetModelQueryLinks
+    on QueryBuilder<BudgetModel, BudgetModel, QFilterCondition> {}
 
 extension BudgetModelQuerySortBy
     on QueryBuilder<BudgetModel, BudgetModel, QSortBy> {
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> sortByCategoryId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'categoryId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> sortByCategoryIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'categoryId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> sortByLimitAmount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'limitAmount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> sortByLimitAmountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'limitAmount', Sort.desc);
+    });
+  }
+
   QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> sortByMonth() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'month', Sort.asc);
@@ -278,13 +900,171 @@ extension BudgetModelQuerySortBy
       return query.addSortBy(r'month', Sort.desc);
     });
   }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> sortByPeriod() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'period', Sort.asc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> sortByPeriodDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'period', Sort.desc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> sortByRolloverAmount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'rolloverAmount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy>
+      sortByRolloverAmountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'rolloverAmount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> sortByRolloverEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'rolloverEnabled', Sort.asc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy>
+      sortByRolloverEnabledDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'rolloverEnabled', Sort.desc);
+    });
+  }
+}
+
+extension BudgetModelQuerySortThenBy
+    on QueryBuilder<BudgetModel, BudgetModel, QSortThenBy> {
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> thenByCategoryId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'categoryId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> thenByCategoryIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'categoryId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> thenById() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'id', Sort.asc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> thenByIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'id', Sort.desc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> thenByLimitAmount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'limitAmount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> thenByLimitAmountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'limitAmount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> thenByMonth() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'month', Sort.asc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> thenByMonthDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'month', Sort.desc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> thenByPeriod() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'period', Sort.asc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> thenByPeriodDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'period', Sort.desc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> thenByRolloverAmount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'rolloverAmount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy>
+      thenByRolloverAmountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'rolloverAmount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> thenByRolloverEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'rolloverEnabled', Sort.asc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy>
+      thenByRolloverEnabledDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'rolloverEnabled', Sort.desc);
+    });
+  }
 }
 
 extension BudgetModelQueryWhereDistinct
     on QueryBuilder<BudgetModel, BudgetModel, QDistinct> {
+  QueryBuilder<BudgetModel, BudgetModel, QDistinct> distinctByCategoryId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'categoryId');
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QDistinct> distinctByLimitAmount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'limitAmount');
+    });
+  }
+
   QueryBuilder<BudgetModel, BudgetModel, QDistinct> distinctByMonth() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'month');
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QDistinct> distinctByPeriod() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'period');
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QDistinct> distinctByRolloverAmount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'rolloverAmount');
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QDistinct>
+      distinctByRolloverEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'rolloverEnabled');
     });
   }
 }
@@ -321,15 +1101,13 @@ extension BudgetModelQueryProperty
     });
   }
 
-  QueryBuilder<BudgetModel, double, QQueryOperations>
-      rolloverAmountProperty() {
+  QueryBuilder<BudgetModel, double, QQueryOperations> rolloverAmountProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'rolloverAmount');
     });
   }
 
-  QueryBuilder<BudgetModel, bool, QQueryOperations>
-      rolloverEnabledProperty() {
+  QueryBuilder<BudgetModel, bool, QQueryOperations> rolloverEnabledProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'rolloverEnabled');
     });

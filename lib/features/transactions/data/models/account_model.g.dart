@@ -15,7 +15,7 @@ extension GetAccountModelCollection on Isar {
 
 const AccountModelSchema = CollectionSchema(
   name: r'AccountModel',
-  id: 3883029658891193853,
+  id: -4417758972305866022,
   properties: {
     r'colorValue': PropertySchema(
       id: 0,
@@ -89,8 +89,8 @@ AccountModel _accountModelDeserialize(
   final object = AccountModel(
     colorValue: reader.readLong(offsets[0]),
     iconCodePoint: reader.readLong(offsets[1]),
-    initialBalance: reader.readDouble(offsets[2]),
-    isDefault: reader.readBool(offsets[3]),
+    initialBalance: reader.readDoubleOrNull(offsets[2]) ?? 0.0,
+    isDefault: reader.readBoolOrNull(offsets[3]) ?? false,
     name: reader.readString(offsets[4]),
   );
   object.id = id;
@@ -109,9 +109,9 @@ P _accountModelDeserializeProp<P>(
     case 1:
       return (reader.readLong(offset)) as P;
     case 2:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readDoubleOrNull(offset) ?? 0.0) as P;
     case 3:
-      return (reader.readBool(offset)) as P;
+      return (reader.readBoolOrNull(offset) ?? false) as P;
     case 4:
       return (reader.readString(offset)) as P;
     default:
@@ -143,8 +143,7 @@ extension AccountModelQueryWhereSort
 
 extension AccountModelQueryWhere
     on QueryBuilder<AccountModel, AccountModel, QWhereClause> {
-  QueryBuilder<AccountModel, AccountModel, QAfterWhereClause> idEqualTo(
-      Id id) {
+  QueryBuilder<AccountModel, AccountModel, QAfterWhereClause> idEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IdWhereClause.between(
         lower: id,
@@ -186,8 +185,7 @@ extension AccountModelQueryWhere
     });
   }
 
-  QueryBuilder<AccountModel, AccountModel, QAfterWhereClause> idLessThan(
-      Id id,
+  QueryBuilder<AccountModel, AccountModel, QAfterWhereClause> idLessThan(Id id,
       {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
@@ -612,8 +610,7 @@ extension AccountModelQuerySortBy
     });
   }
 
-  QueryBuilder<AccountModel, AccountModel, QAfterSortBy>
-      sortByIconCodePoint() {
+  QueryBuilder<AccountModel, AccountModel, QAfterSortBy> sortByIconCodePoint() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'iconCodePoint', Sort.asc);
     });
@@ -646,8 +643,7 @@ extension AccountModelQuerySortBy
     });
   }
 
-  QueryBuilder<AccountModel, AccountModel, QAfterSortBy>
-      sortByIsDefaultDesc() {
+  QueryBuilder<AccountModel, AccountModel, QAfterSortBy> sortByIsDefaultDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isDefault', Sort.desc);
     });
@@ -681,8 +677,7 @@ extension AccountModelQuerySortThenBy
     });
   }
 
-  QueryBuilder<AccountModel, AccountModel, QAfterSortBy>
-      thenByIconCodePoint() {
+  QueryBuilder<AccountModel, AccountModel, QAfterSortBy> thenByIconCodePoint() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'iconCodePoint', Sort.asc);
     });
@@ -727,8 +722,7 @@ extension AccountModelQuerySortThenBy
     });
   }
 
-  QueryBuilder<AccountModel, AccountModel, QAfterSortBy>
-      thenByIsDefaultDesc() {
+  QueryBuilder<AccountModel, AccountModel, QAfterSortBy> thenByIsDefaultDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isDefault', Sort.desc);
     });
@@ -749,8 +743,7 @@ extension AccountModelQuerySortThenBy
 
 extension AccountModelQueryWhereDistinct
     on QueryBuilder<AccountModel, AccountModel, QDistinct> {
-  QueryBuilder<AccountModel, AccountModel, QDistinct>
-      distinctByColorValue() {
+  QueryBuilder<AccountModel, AccountModel, QDistinct> distinctByColorValue() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'colorValue');
     });
@@ -770,8 +763,7 @@ extension AccountModelQueryWhereDistinct
     });
   }
 
-  QueryBuilder<AccountModel, AccountModel, QDistinct>
-      distinctByIsDefault() {
+  QueryBuilder<AccountModel, AccountModel, QDistinct> distinctByIsDefault() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isDefault');
     });

@@ -17,6 +17,7 @@ class BudgetModel {
   Id id = Isar.autoIncrement;
 
   /// null = overall / total budget; non-null = per-category budget
+  @Index()
   int? categoryId;
 
   double limitAmount;
@@ -25,6 +26,7 @@ class BudgetModel {
   BudgetPeriod period;
 
   /// YYYYMM (e.g. 202503 for March 2025); 0 = all-time
+  @Index()
   int month;
 
   bool rolloverEnabled;

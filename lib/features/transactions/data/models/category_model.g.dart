@@ -15,7 +15,7 @@ extension GetCategoryModelCollection on Isar {
 
 const CategoryModelSchema = CollectionSchema(
   name: r'CategoryModel',
-  id: 1932145827835071413,
+  id: 2062173352312629051,
   properties: {
     r'colorValue': PropertySchema(
       id: 0,
@@ -89,7 +89,7 @@ CategoryModel _categoryModelDeserialize(
   final object = CategoryModel(
     colorValue: reader.readLong(offsets[0]),
     iconCodePoint: reader.readLong(offsets[1]),
-    isDefault: reader.readBool(offsets[2]),
+    isDefault: reader.readBoolOrNull(offsets[2]) ?? false,
     isIncome: reader.readBool(offsets[3]),
     name: reader.readString(offsets[4]),
   );
@@ -109,7 +109,7 @@ P _categoryModelDeserializeProp<P>(
     case 1:
       return (reader.readLong(offset)) as P;
     case 2:
-      return (reader.readBool(offset)) as P;
+      return (reader.readBoolOrNull(offset) ?? false) as P;
     case 3:
       return (reader.readBool(offset)) as P;
     case 4:
@@ -327,8 +327,8 @@ extension CategoryModelQueryFilter
     });
   }
 
-  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
-      idEqualTo(Id value) {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition> idEqualTo(
+      Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'id',
@@ -401,8 +401,7 @@ extension CategoryModelQueryFilter
     });
   }
 
-  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
-      nameEqualTo(
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition> nameEqualTo(
     String value, {
     bool caseSensitive = true,
   }) {
@@ -694,8 +693,7 @@ extension CategoryModelQuerySortThenBy
 
 extension CategoryModelQueryWhereDistinct
     on QueryBuilder<CategoryModel, CategoryModel, QDistinct> {
-  QueryBuilder<CategoryModel, CategoryModel, QDistinct>
-      distinctByColorValue() {
+  QueryBuilder<CategoryModel, CategoryModel, QDistinct> distinctByColorValue() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'colorValue');
     });
@@ -708,15 +706,13 @@ extension CategoryModelQueryWhereDistinct
     });
   }
 
-  QueryBuilder<CategoryModel, CategoryModel, QDistinct>
-      distinctByIsDefault() {
+  QueryBuilder<CategoryModel, CategoryModel, QDistinct> distinctByIsDefault() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isDefault');
     });
   }
 
-  QueryBuilder<CategoryModel, CategoryModel, QDistinct>
-      distinctByIsIncome() {
+  QueryBuilder<CategoryModel, CategoryModel, QDistinct> distinctByIsIncome() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isIncome');
     });

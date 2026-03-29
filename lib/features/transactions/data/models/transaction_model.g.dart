@@ -15,7 +15,7 @@ extension GetTransactionModelCollection on Isar {
 
 const TransactionModelSchema = CollectionSchema(
   name: r'TransactionModel',
-  id: 7720767229485451846,
+  id: -8282894918172491246,
   properties: {
     r'accountId': PropertySchema(
       id: 0,
@@ -66,7 +66,7 @@ const TransactionModelSchema = CollectionSchema(
   idName: r'id',
   indexes: {
     r'amount': IndexSchema(
-      id: 1629257687480700427,
+      id: 3252599345080253594,
       name: r'amount',
       unique: false,
       replace: false,
@@ -79,7 +79,7 @@ const TransactionModelSchema = CollectionSchema(
       ],
     ),
     r'categoryId': IndexSchema(
-      id: -4277129849714452798,
+      id: -8798048739239305339,
       name: r'categoryId',
       unique: false,
       replace: false,
@@ -92,7 +92,7 @@ const TransactionModelSchema = CollectionSchema(
       ],
     ),
     r'accountId': IndexSchema(
-      id: -1311168863659948076,
+      id: -1591555361937770434,
       name: r'accountId',
       unique: false,
       replace: false,
@@ -105,7 +105,7 @@ const TransactionModelSchema = CollectionSchema(
       ],
     ),
     r'date': IndexSchema(
-      id: -6791849588684828606,
+      id: -7552997827385218417,
       name: r'date',
       unique: false,
       replace: false,
@@ -118,7 +118,7 @@ const TransactionModelSchema = CollectionSchema(
       ],
     ),
     r'isIncome': IndexSchema(
-      id: 1176025695680761962,
+      id: 8600847597078158182,
       name: r'isIncome',
       unique: false,
       replace: false,
@@ -181,12 +181,12 @@ TransactionModel _transactionModelDeserialize(
     amount: reader.readDouble(offsets[1]),
     categoryId: reader.readLong(offsets[2]),
     date: reader.readDateTime(offsets[3]),
-    isDeleted: reader.readBool(offsets[4]),
+    isDeleted: reader.readBoolOrNull(offsets[4]) ?? false,
     isIncome: reader.readBool(offsets[5]),
     note: reader.readStringOrNull(offsets[6]),
-    recurrence:
-        _TransactionModelrecurrenceValueEnumMap[reader.readByteOrNull(offsets[7])] ??
-            RecurrenceType.none,
+    recurrence: _TransactionModelrecurrenceValueEnumMap[
+            reader.readByteOrNull(offsets[7])] ??
+        RecurrenceType.none,
   );
   object.id = id;
   return object;
@@ -208,15 +208,15 @@ P _transactionModelDeserializeProp<P>(
     case 3:
       return (reader.readDateTime(offset)) as P;
     case 4:
-      return (reader.readBool(offset)) as P;
+      return (reader.readBoolOrNull(offset) ?? false) as P;
     case 5:
       return (reader.readBool(offset)) as P;
     case 6:
       return (reader.readStringOrNull(offset)) as P;
     case 7:
       return (_TransactionModelrecurrenceValueEnumMap[
-                  reader.readByteOrNull(offset)] ??
-              RecurrenceType.none) as P;
+              reader.readByteOrNull(offset)] ??
+          RecurrenceType.none) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -241,8 +241,7 @@ Id _transactionModelGetId(TransactionModel object) {
   return object.id;
 }
 
-List<IsarLinkBase<dynamic>> _transactionModelGetLinks(
-    TransactionModel object) {
+List<IsarLinkBase<dynamic>> _transactionModelGetLinks(TransactionModel object) {
   return [];
 }
 
@@ -258,12 +257,53 @@ extension TransactionModelQueryWhereSort
       return query.addWhereClause(const IdWhereClause.any());
     });
   }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterWhere> anyAmount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'amount'),
+      );
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterWhere>
+      anyCategoryId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'categoryId'),
+      );
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterWhere> anyAccountId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'accountId'),
+      );
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterWhere> anyDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'date'),
+      );
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterWhere> anyIsIncome() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'isIncome'),
+      );
+    });
+  }
 }
 
 extension TransactionModelQueryWhere
     on QueryBuilder<TransactionModel, TransactionModel, QWhereClause> {
-  QueryBuilder<TransactionModel, TransactionModel, QAfterWhereClause>
-      idEqualTo(Id id) {
+  QueryBuilder<TransactionModel, TransactionModel, QAfterWhereClause> idEqualTo(
+      Id id) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IdWhereClause.between(
         lower: id,
@@ -313,8 +353,7 @@ extension TransactionModelQueryWhere
     });
   }
 
-  QueryBuilder<TransactionModel, TransactionModel, QAfterWhereClause>
-      idBetween(
+  QueryBuilder<TransactionModel, TransactionModel, QAfterWhereClause> idBetween(
     Id lowerId,
     Id upperId, {
     bool includeLower = true,
@@ -1539,8 +1578,7 @@ extension TransactionModelQueryWhereDistinct
     });
   }
 
-  QueryBuilder<TransactionModel, TransactionModel, QDistinct>
-      distinctByDate() {
+  QueryBuilder<TransactionModel, TransactionModel, QDistinct> distinctByDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'date');
     });
@@ -1560,8 +1598,8 @@ extension TransactionModelQueryWhereDistinct
     });
   }
 
-  QueryBuilder<TransactionModel, TransactionModel, QDistinct>
-      distinctByNote({bool caseSensitive = true}) {
+  QueryBuilder<TransactionModel, TransactionModel, QDistinct> distinctByNote(
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'note', caseSensitive: caseSensitive);
     });
