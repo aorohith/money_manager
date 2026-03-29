@@ -1,22 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
 
 import 'app.dart';
-import 'core/database/isar_service.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Open Isar with no schemas for now; schemas are added in Sprint 3+
-  final isar = await IsarService.open(<CollectionSchema<dynamic>>[]);
-
+  // Sprint 1: no data models yet — Isar schemas are added in Sprint 3.
   runApp(
-    ProviderScope(
-      overrides: [
-        isarProvider.overrideWithValue(isar),
-      ],
-      child: const App(),
+    const ProviderScope(
+      child: App(),
     ),
   );
 }
