@@ -15,7 +15,7 @@ extension GetBudgetModelCollection on Isar {
 
 const BudgetModelSchema = CollectionSchema(
   name: r'BudgetModel',
-  id: 2045783612394857341,
+  id: 7247118153370490723,
   properties: {
     r'categoryId': PropertySchema(
       id: 0,
