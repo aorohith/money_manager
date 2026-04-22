@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 
 part 'account_model.g.dart';
@@ -19,4 +20,13 @@ class AccountModel {
   late int colorValue;
   late double initialBalance;
   late bool isDefault;
+
+  DateTime updatedAt = DateTime.now();
+  String? userId;
+
+  @ignore
+  IconData get icon => IconData(iconCodePoint, fontFamily: 'MaterialIcons');
+
+  @ignore
+  Color get color => Color(colorValue);
 }

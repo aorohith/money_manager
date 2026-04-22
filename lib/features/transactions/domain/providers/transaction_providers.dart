@@ -1,12 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
 
 import '../../../../core/database/isar_service.dart';
 import '../../data/models/account_model.dart';
 import '../../data/models/category_model.dart';
 import '../../data/models/transaction_model.dart';
+import '../../data/repositories/account_repository.dart';
 import '../../data/repositories/category_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../data/seed/default_accounts.dart';
@@ -24,6 +24,11 @@ final transactionRepositoryProvider =
 final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
   final isar = ref.read(isarProvider);
   return CategoryRepositoryImpl(isar);
+});
+
+final accountRepositoryProvider = Provider<AccountRepository>((ref) {
+  final isar = ref.read(isarProvider);
+  return AccountRepositoryImpl(isar);
 });
 
 // ── Use cases ─────────────────────────────────────────────────────────────────
@@ -89,6 +94,18 @@ final transactionListProvider =
     AsyncNotifierProvider<TransactionListNotifier, List<TransactionModel>>(
         TransactionListNotifier.new);
 
+/// Reactive notifier that streams the 100 most-recent transactions matching
+/// [TransactionFilter].
+///
+/// Architecture notes:
+/// - The Isar [watchAll] stream fires immediately with the current data set.
+/// - A [Completer] bridges the first stream emission back to [build]'s return
+///   value, satisfying Riverpod's requirement that [build] resolves before the
+///   notifier is considered loaded.
+/// - Subsequent emissions update [state] directly so the UI rebuilds live.
+/// - Text search is applied client-side for partial-word matching.
+/// - For full history beyond 100 records use [TransactionRepository.getAll]
+///   with [limit] + [offset] directly.
 class TransactionListNotifier
     extends AsyncNotifier<List<TransactionModel>> {
   StreamSubscription<List<TransactionModel>>? _sub;
@@ -98,7 +115,6 @@ class TransactionListNotifier
     final filter = ref.watch(transactionFilterProvider);
     final repo = ref.read(transactionRepositoryProvider);
 
-    // Cancel previous stream sub before creating new one
     await _sub?.cancel();
 
     final completer = Completer<List<TransactionModel>>();
@@ -109,9 +125,9 @@ class TransactionListNotifier
           categoryId: filter.categoryId,
           from: filter.from,
           to: filter.to,
+          limit: 100,
         )
         .listen((txs) {
-          // Apply client-side text search (debounced in UI)
           final filtered = filter.searchQuery.isEmpty
               ? txs
               : txs
@@ -161,7 +177,6 @@ final incomeCategoriesProvider =
 final dbSeederProvider = FutureProvider<void>((ref) async {
   final isar = ref.read(isarProvider);
 
-  // Seed categories once
   final existingCats = await isar.categoryModels.count();
   if (existingCats == 0) {
     await isar.writeTxn(() async {
@@ -169,7 +184,6 @@ final dbSeederProvider = FutureProvider<void>((ref) async {
     });
   }
 
-  // Seed accounts once
   final existingAccounts = await isar.accountModels.count();
   if (existingAccounts == 0) {
     await isar.writeTxn(() async {
@@ -178,11 +192,35 @@ final dbSeederProvider = FutureProvider<void>((ref) async {
   }
 });
 
-// ── Account list ──────────────────────────────────────────────────────────────
+// ── Accounts ──────────────────────────────────────────────────────────────────
 
-final accountsProvider = FutureProvider<List<AccountModel>>((ref) async {
-  // Watch seeder first to ensure defaults exist
+/// Live stream of all accounts. Rebuilds UI whenever an account is
+/// added, edited, or deleted from the account management screen.
+final accountsProvider = StreamProvider<List<AccountModel>>((ref) async* {
   await ref.watch(dbSeederProvider.future);
-  final isar = ref.read(isarProvider);
-  return isar.accountModels.where().findAll();
+  final repo = ref.read(accountRepositoryProvider);
+  yield* repo.watchAll();
+});
+
+// ── Account balance ───────────────────────────────────────────────────────────
+
+/// Live computed balance for a single account.
+///
+/// Balance = [AccountModel.initialBalance] + net transaction delta.
+/// Uses a stream so the UI updates immediately when any transaction for
+/// this account is added, edited, or deleted.
+final accountBalanceProvider =
+    StreamProvider.autoDispose.family<double, AccountModel>((ref, account) {
+  final repo = ref.read(transactionRepositoryProvider);
+  return repo
+      .watchTransactionDeltaForAccount(account.id)
+      .map((delta) => account.initialBalance + delta);
+});
+
+/// One-shot fetch of an account's computed balance (for non-reactive contexts).
+final accountBalanceFutureProvider =
+    FutureProvider.autoDispose.family<double, AccountModel>((ref, account) async {
+  final repo = ref.read(transactionRepositoryProvider);
+  final delta = await repo.getTransactionDeltaForAccount(account.id);
+  return account.initialBalance + delta;
 });

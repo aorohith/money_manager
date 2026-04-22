@@ -38,6 +38,13 @@ class TransactionModel {
   late RecurrenceType recurrence;
 
   late bool isDeleted;
+
+  /// Last write timestamp — used for future cloud sync conflict resolution.
+  @Index()
+  DateTime updatedAt = DateTime.now();
+
+  /// Reserved for future multi-user / cloud sync. Null = local-only record.
+  String? userId;
 }
 
 enum RecurrenceType {

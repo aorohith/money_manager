@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../constants/constants.dart';
 import '../../features/auth/domain/auth_state.dart';
 import '../../features/auth/presentation/pin_lock_screen.dart';
 import '../../features/auth/presentation/pin_setup_screen.dart';
@@ -13,8 +14,20 @@ import '../../features/onboarding/presentation/currency_setup_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/onboarding/presentation/profile_setup_screen.dart';
 import '../../features/onboarding/presentation/splash_screen.dart';
+import '../../features/analytics/presentation/screens/analytics_screen.dart';
+import '../../features/analytics/presentation/screens/category_detail_screen.dart';
+import '../../features/analytics/domain/models/analytics_data.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/budgets/presentation/screens/budgets_screen.dart';
+import '../../features/goals/presentation/screens/goals_screen.dart';
+import '../../features/goals/presentation/screens/goal_detail_screen.dart';
+import '../../features/insights/presentation/screens/insights_screen.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/sms/presentation/screens/sms_inbox_screen.dart';
+import '../../features/sms/presentation/screens/sms_onboarding_screen.dart';
+import '../../features/sms/presentation/screens/sms_settings_screen.dart';
+import '../../features/transactions/presentation/screens/manage_accounts_screen.dart';
+import '../../features/transactions/presentation/screens/manage_categories_screen.dart';
 import '../../features/transactions/presentation/screens/transactions_screen.dart';
 
 part 'app_routes.dart';
@@ -109,34 +122,75 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutes.analytics,
             name: AppRouteNames.analytics,
-            builder: (_, __) => const _StubScreen(label: 'Analytics'),
+            builder: (_, __) => const AnalyticsScreen(),
+            routes: [
+              GoRoute(
+                path: 'category/:id',
+                name: AppRouteNames.analyticsCategory,
+                builder: (_, state) {
+                  final categoryId =
+                      int.parse(state.pathParameters['id']!);
+                  final params = state.extra as AnalyticsParams?;
+                  return CategoryDetailScreen(
+                    categoryId: categoryId,
+                    analyticsParams: params ??
+                        AnalyticsParams(
+                          period: AnalyticsPeriod.month,
+                          referenceDate: DateTime.now(),
+                        ),
+                  );
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: AppRoutes.goals,
             name: AppRouteNames.goals,
-            builder: (_, __) => const _StubScreen(label: 'Goals'),
+            builder: (_, __) => const GoalsScreen(),
             routes: [
-              GoRoute(
-                path: 'add',
-                name: AppRouteNames.addGoal,
-                builder: (_, __) => const _StubScreen(label: 'Add Goal'),
-              ),
               GoRoute(
                 path: ':id',
                 name: AppRouteNames.goalDetail,
-                builder: (_, __) => const _StubScreen(label: 'Goal Detail'),
+                builder: (_, state) => GoalDetailScreen(
+                  goalId: int.parse(state.pathParameters['id']!),
+                ),
               ),
             ],
           ),
           GoRoute(
             path: AppRoutes.insights,
             name: AppRouteNames.insights,
-            builder: (_, __) => const _StubScreen(label: 'Insights'),
+            builder: (_, __) => const InsightsScreen(),
           ),
           GoRoute(
             path: AppRoutes.settings,
             name: AppRouteNames.settings,
-            builder: (_, __) => const _StubScreen(label: 'Settings'),
+            builder: (_, __) => const SettingsScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.smsInbox,
+            name: AppRouteNames.smsInbox,
+            builder: (_, __) => const SmsInboxScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.smsOnboarding,
+            name: AppRouteNames.smsOnboarding,
+            builder: (_, __) => const SmsOnboardingScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.smsSettings,
+            name: AppRouteNames.smsSettings,
+            builder: (_, __) => const SmsSettingsScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.manageCategories,
+            name: AppRouteNames.manageCategories,
+            builder: (_, __) => const ManageCategoriesScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.manageAccounts,
+            name: AppRouteNames.manageAccounts,
+            builder: (_, __) => const ManageAccountsScreen(),
           ),
           if (kDebugMode)
             GoRoute(
@@ -161,18 +215,6 @@ class _AuthStatusListenable extends ChangeNotifier {
   }
 }
 
-class _StubScreen extends StatelessWidget {
-  const _StubScreen({required this.label});
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(label)),
-      body: Center(child: Text(label)),
-    );
-  }
-}
 
 class _AppShell extends StatelessWidget {
   const _AppShell({required this.child});
@@ -199,8 +241,8 @@ class _AppShell extends StatelessWidget {
           border: Border(
             top: BorderSide(
               color: isDark
-                  ? const Color(0xFF1E2D4F)
-                  : const Color(0xFFE2E8F0),
+                  ? AppColors.outlineDark
+                  : AppColors.outline,
               width: 1,
             ),
           ),

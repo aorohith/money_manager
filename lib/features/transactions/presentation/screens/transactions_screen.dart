@@ -10,6 +10,7 @@ import '../../../../features/auth/providers/auth_provider.dart';
 import '../../data/models/transaction_model.dart';
 import '../../domain/providers/transaction_providers.dart';
 import '../widgets/add_transaction_sheet.dart';
+import '../widgets/transaction_filter_chips.dart';
 import '../widgets/transaction_tile.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
@@ -53,21 +54,26 @@ class _TransactionsScreenState
       appBar: AppBar(
         title: const Text('Transactions'),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(64),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screenPadding,
-                0,
-                AppSpacing.screenPadding,
-                AppSpacing.sm),
-            child: AppTextField(
-              controller: _searchCtrl,
-              hint: 'Search transactions…',
-              prefixIcon: const Icon(Icons.search_rounded),
-              onChanged: _onSearch,
-              textInputAction: TextInputAction.search,
-              semanticLabel: 'Search transactions',
-            ),
+          preferredSize: const Size.fromHeight(112),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.screenPadding,
+                    0,
+                    AppSpacing.screenPadding,
+                    AppSpacing.xs),
+                child: AppTextField(
+                  controller: _searchCtrl,
+                  hint: 'Search transactions…',
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  onChanged: _onSearch,
+                  textInputAction: TextInputAction.search,
+                  semanticLabel: 'Search transactions',
+                ),
+              ),
+              const TransactionFilterChips(),
+            ],
           ),
         ),
       ),

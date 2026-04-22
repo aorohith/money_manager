@@ -25,16 +25,14 @@ class CategoryRepositoryImpl implements CategoryRepository {
 
   @override
   Future<int> add(CategoryModel category) async {
-    int id = 0;
-    await _isar.writeTxn(() async {
-      id = await _isar.categoryModels.put(category);
-    });
-    return id;
+    category.updatedAt = DateTime.now();
+    return _isar.writeTxn(() => _isar.categoryModels.put(category));
   }
 
   @override
-  Future<void> update(CategoryModel category) async {
-    await _isar.writeTxn(() async => _isar.categoryModels.put(category));
+  Future<void> update(CategoryModel category) {
+    category.updatedAt = DateTime.now();
+    return _isar.writeTxn(() => _isar.categoryModels.put(category));
   }
 
   @override

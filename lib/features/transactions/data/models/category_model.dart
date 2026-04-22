@@ -21,6 +21,9 @@ class CategoryModel {
   late bool isIncome;
   late bool isDefault;
 
+  DateTime updatedAt = DateTime.now();
+  String? userId;
+
   @ignore
   IconData get icon => IconData(iconCodePoint, fontFamily: 'MaterialIcons');
 

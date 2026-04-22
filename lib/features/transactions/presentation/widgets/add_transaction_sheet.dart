@@ -81,37 +81,52 @@ class _AddTransactionFormState
 
     setState(() => _loading = true);
 
-    final tx = widget.existing ??
-        TransactionModel(
-          amount: 0,
-          categoryId: 0,
-          accountId: 0,
-          date: DateTime.now(),
-          isIncome: false,
-        );
+    try {
+      final tx = widget.existing ??
+          TransactionModel(
+            amount: 0,
+            categoryId: 0,
+            accountId: 0,
+            date: DateTime.now(),
+            isIncome: false,
+          );
 
-    tx
-      ..amount = double.parse(_amountCtrl.text.replaceAll(',', ''))
-      ..categoryId = _selectedCategoryId!
-      ..accountId = _selectedAccountId!
-      ..date = _date
-      ..isIncome = _isIncome
-      ..note = _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim()
-      ..recurrence = _recurrence;
+      tx
+        ..amount = double.tryParse(_amountCtrl.text.replaceAll(',', '')) ?? 0
+        ..categoryId = _selectedCategoryId!
+        ..accountId = _selectedAccountId!
+        ..date = _date
+        ..isIncome = _isIncome
+        ..note = _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim()
+        ..recurrence = _recurrence;
 
-    if (widget.existing == null) {
-      await ref.read(addTransactionUseCaseProvider)(tx);
-    } else {
-      await ref.read(editTransactionUseCaseProvider)(tx);
-    }
+      if (widget.existing == null) {
+        await ref.read(addTransactionUseCaseProvider)(tx);
+      } else {
+        await ref.read(editTransactionUseCaseProvider)(tx);
+      }
 
-    if (mounted) {
-      Navigator.of(context).pop();
-      showAppSnackBar(context,
+      if (mounted) {
+        Navigator.of(context).pop();
+        showAppSnackBar(
+          context,
           message: widget.existing == null
               ? 'Transaction added'
               : 'Transaction updated',
-          type: AppSnackBarType.success);
+          type: AppSnackBarType.success,
+        );
+      }
+    } catch (e) {
+      // Reset loading state so the user can retry — without this the button
+      // stays in a spinner indefinitely after an error.
+      if (mounted) {
+        setState(() => _loading = false);
+        showAppSnackBar(
+          context,
+          message: 'Something went wrong. Please try again.',
+          type: AppSnackBarType.error,
+        );
+      }
     }
   }
 
@@ -140,8 +155,13 @@ class _AddTransactionFormState
                     icon: Icon(Icons.arrow_downward_rounded)),
               ],
               selected: {_isIncome},
-              onSelectionChanged: (s) =>
-                  setState(() => _selectedCategoryId = null,),
+              onSelectionChanged: (s) => setState(() {
+                    // Update the transaction type AND clear the category
+                    // selection — categories are filtered by income/expense,
+                    // so the previous selection would be invalid after switch.
+                    _isIncome = s.first;
+                    _selectedCategoryId = null;
+                  }),
             ),
           ),
 
