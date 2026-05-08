@@ -20,22 +20,34 @@ void main() {
 
     test('monthly adds 1 month same day', () {
       final from = DateTime(2024, 1, 15);
-      expect(calc.nextDate(from, RecurrenceType.monthly), DateTime(2024, 2, 15));
+      expect(
+        calc.nextDate(from, RecurrenceType.monthly),
+        DateTime(2024, 2, 15),
+      );
     });
 
     test('monthly clamps Jan 31 → Feb 29 on leap year', () {
       final from = DateTime(2024, 1, 31);
-      expect(calc.nextDate(from, RecurrenceType.monthly), DateTime(2024, 2, 29));
+      expect(
+        calc.nextDate(from, RecurrenceType.monthly),
+        DateTime(2024, 2, 29),
+      );
     });
 
     test('monthly clamps Jan 31 → Feb 28 on non-leap year', () {
       final from = DateTime(2023, 1, 31);
-      expect(calc.nextDate(from, RecurrenceType.monthly), DateTime(2023, 2, 28));
+      expect(
+        calc.nextDate(from, RecurrenceType.monthly),
+        DateTime(2023, 2, 28),
+      );
     });
 
     test('monthly wraps Dec → Jan of next year', () {
       final from = DateTime(2024, 12, 15);
-      expect(calc.nextDate(from, RecurrenceType.monthly), DateTime(2025, 1, 15));
+      expect(
+        calc.nextDate(from, RecurrenceType.monthly),
+        DateTime(2025, 1, 15),
+      );
     });
 
     test('yearly adds 12 months', () {
@@ -103,8 +115,10 @@ void main() {
 
     test('returns empty for none type', () {
       final d = DateTime(2024, 1, 1);
-      expect(calc.missedDates(d, RecurrenceType.none, DateTime(2024, 12, 31)),
-          isEmpty);
+      expect(
+        calc.missedDates(d, RecurrenceType.none, DateTime(2024, 12, 31)),
+        isEmpty,
+      );
     });
 
     test('weekly: 2 missed weeks', () {

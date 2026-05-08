@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:money_manager/features/goals/data/models/goal_model.dart';
 import 'package:money_manager/features/transactions/data/models/account_model.dart';
 import 'package:money_manager/features/transactions/data/models/category_model.dart';
@@ -13,6 +12,7 @@ TransactionModel makeTx({
   bool isIncome = false,
   String? note,
   RecurrenceType recurrence = RecurrenceType.none,
+  TransactionEntryType entryType = TransactionEntryType.regular,
   bool isDeleted = false,
 }) {
   final tx = TransactionModel(
@@ -23,6 +23,7 @@ TransactionModel makeTx({
     isIncome: isIncome,
     note: note,
     recurrence: recurrence,
+    entryType: entryType,
     isDeleted: isDeleted,
   );
   tx.id = id;
@@ -53,6 +54,7 @@ AccountModel makeAccount({
   String name = 'Cash',
   double initialBalance = 0.0,
   bool isDefault = false,
+  double? actualBalance,
   int iconCodePoint = 0xe4c7,
   int colorValue = 0xFF0052FF,
 }) {
@@ -61,6 +63,7 @@ AccountModel makeAccount({
     iconCodePoint: iconCodePoint,
     colorValue: colorValue,
     initialBalance: initialBalance,
+    actualBalance: actualBalance,
     isDefault: isDefault,
   );
   acc.id = id;
@@ -91,8 +94,8 @@ GoalModel makeGoal({
 /// Returns a minimal set of expense categories (ids 1-4) useful for
 /// CategorizationEngine tests.
 List<CategoryModel> defaultTestCategories() => [
-      makeCat(id: 1, name: 'Food', isIncome: false),
-      makeCat(id: 2, name: 'Transport', isIncome: false),
-      makeCat(id: 3, name: 'Other', isIncome: false),
-      makeCat(id: 4, name: 'Salary', isIncome: true),
-    ];
+  makeCat(id: 1, name: 'Food', isIncome: false),
+  makeCat(id: 2, name: 'Transport', isIncome: false),
+  makeCat(id: 3, name: 'Other', isIncome: false),
+  makeCat(id: 4, name: 'Salary', isIncome: true),
+];

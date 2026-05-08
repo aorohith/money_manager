@@ -18,8 +18,12 @@ void main() {
 
   group('PIN operations', () {
     test('savePin writes to secure storage', () async {
-      when(() => mockSecure.write(key: any(named: 'key'), value: any(named: 'value')))
-          .thenAnswer((_) async {});
+      when(
+        () => mockSecure.write(
+          key: any(named: 'key'),
+          value: any(named: 'value'),
+        ),
+      ).thenAnswer((_) async {});
       await datasource.savePin('123456');
       verify(() => mockSecure.write(key: 'app_pin', value: '123456')).called(1);
     });
@@ -30,20 +34,23 @@ void main() {
     });
 
     test('hasPin returns true when pin stored', () async {
-      when(() => mockSecure.read(key: 'app_pin'))
-          .thenAnswer((_) async => '123456');
+      when(
+        () => mockSecure.read(key: 'app_pin'),
+      ).thenAnswer((_) async => '123456');
       expect(await datasource.hasPin(), isTrue);
     });
 
     test('verifyPin returns true for matching PIN', () async {
-      when(() => mockSecure.read(key: 'app_pin'))
-          .thenAnswer((_) async => '123456');
+      when(
+        () => mockSecure.read(key: 'app_pin'),
+      ).thenAnswer((_) async => '123456');
       expect(await datasource.verifyPin('123456'), isTrue);
     });
 
     test('verifyPin returns false for wrong PIN', () async {
-      when(() => mockSecure.read(key: 'app_pin'))
-          .thenAnswer((_) async => '123456');
+      when(
+        () => mockSecure.read(key: 'app_pin'),
+      ).thenAnswer((_) async => '123456');
       expect(await datasource.verifyPin('000000'), isFalse);
     });
 

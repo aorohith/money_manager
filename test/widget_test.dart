@@ -9,9 +9,7 @@ void main() {
   testWidgets('MaterialApp renders with light theme', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          authProvider.overrideWith(() => _FakeAuthNotifier()),
-        ],
+        overrides: [authProvider.overrideWith(() => _FakeAuthNotifier())],
         child: MaterialApp(
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
@@ -26,9 +24,7 @@ void main() {
   testWidgets('MaterialApp renders with dark theme', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          authProvider.overrideWith(() => _FakeAuthNotifier()),
-        ],
+        overrides: [authProvider.overrideWith(() => _FakeAuthNotifier())],
         child: MaterialApp(
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,

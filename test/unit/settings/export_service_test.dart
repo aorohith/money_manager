@@ -50,11 +50,11 @@ void main() {
       expect(rows.length, 2);
 
       final row = rows[1];
-      expect(row[0], '2024-03-15');           // Date
-      expect(row[1], 'Expense');              // Type
-      expect(row[2], 'Food');                 // Category
-      expect(row[3], '45.50');               // Amount
-      expect(row[4], 'Lunch');               // Note
+      expect(row[0], '2024-03-15'); // Date
+      expect(row[1], 'Expense'); // Type
+      expect(row[2], 'Food'); // Category
+      expect(row[3], '45.50'); // Amount
+      expect(row[4], 'Lunch'); // Note
     });
 
     test('income transaction has "Income" type', () {
@@ -125,10 +125,7 @@ void main() {
       when(() => repo.getAll()).thenAnswer((_) async => []);
       final service = ExportService(repo, categories);
 
-      // getTemporaryDirectory may throw in test env — we catch that
-      try {
-        await service.exportCsv();
-      } catch (_) {}
+      await expectLater(service.exportCsv(), throwsA(isA<Object>()));
 
       verify(() => repo.getAll()).called(1);
     });
@@ -141,9 +138,7 @@ void main() {
       when(() => repo.getAll()).thenAnswer((_) async => []);
       final service = ExportService(repo, categories);
 
-      try {
-        await service.exportPdf();
-      } catch (_) {}
+      await expectLater(service.exportPdf(), throwsA(isA<Object>()));
 
       verify(() => repo.getAll()).called(1);
     });

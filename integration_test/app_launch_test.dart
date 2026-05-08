@@ -6,8 +6,9 @@ import 'package:money_manager/main.dart' as app;
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('App launches and navigates past splash screen',
-      (WidgetTester tester) async {
+  testWidgets('App launches and navigates past splash screen', (
+    WidgetTester tester,
+  ) async {
     app.main();
     await tester.pumpAndSettle(const Duration(seconds: 1));
 
@@ -25,10 +26,11 @@ void main() {
     // Verify at least one NavigationBar destination is visible (shell route),
     // OR the onboarding content is visible.
     final isOnShell = find.byType(NavigationBar).evaluate().isNotEmpty;
-    final isOnOnboarding =
-        find.text('Take control of\nyour money').evaluate().isNotEmpty;
-    final isOnPin =
-        find.byKey(const Key('pin_pad')).evaluate().isNotEmpty;
+    final isOnOnboarding = find
+        .text('Take control of\nyour money')
+        .evaluate()
+        .isNotEmpty;
+    final isOnPin = find.byKey(const Key('pin_pad')).evaluate().isNotEmpty;
 
     expect(
       isOnShell || isOnOnboarding || isOnPin,

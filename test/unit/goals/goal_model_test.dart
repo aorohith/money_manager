@@ -29,11 +29,14 @@ void main() {
       expect(goal.progress, 0.0);
     });
 
-    test('negative current → 0.0 (clamped via remaining, progress rounds down)', () {
-      // progress = (-100/1000).clamp(0,1) = 0
-      final goal = makeGoal(targetAmount: 1000, currentAmount: -100);
-      expect(goal.progress, 0.0);
-    });
+    test(
+      'negative current → 0.0 (clamped via remaining, progress rounds down)',
+      () {
+        // progress = (-100/1000).clamp(0,1) = 0
+        final goal = makeGoal(targetAmount: 1000, currentAmount: -100);
+        expect(goal.progress, 0.0);
+      },
+    );
   });
 
   group('GoalModel.remaining', () {

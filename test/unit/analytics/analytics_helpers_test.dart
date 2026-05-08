@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:money_manager/features/analytics/domain/models/analytics_data.dart';
 import 'package:money_manager/features/analytics/domain/providers/analytics_providers.dart';
 
 void main() {
@@ -24,7 +23,7 @@ void main() {
       );
       final (from, to) = periodRange(params);
       expect(from, DateTime(2024, 6, 10)); // Monday
-      expect(to, DateTime(2024, 6, 17));   // following Monday
+      expect(to, DateTime(2024, 6, 17)); // following Monday
     });
 
     test('month range covers whole month', () {

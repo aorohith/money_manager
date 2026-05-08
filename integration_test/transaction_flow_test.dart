@@ -15,22 +15,26 @@ void main() {
   /// Navigate to the Transactions tab (index 1 on the shell NavigationBar).
   Future<void> goToTransactions(WidgetTester tester) async {
     final navBar = find.byType(NavigationBar);
-    if (navBar.evaluate().isEmpty) return; // already on right tab or no shell
+    expect(
+      navBar,
+      findsOneWidget,
+      reason: 'Transactions flow requires authenticated shell navigation',
+    );
     final destinations = find.descendant(
       of: navBar,
       matching: find.byType(NavigationDestination),
     );
-    if (destinations.evaluate().length > 1) {
-      await tester.tap(destinations.at(1));
-      await tester.pumpAndSettle();
-    }
+    expect(
+      destinations.evaluate().length,
+      greaterThan(1),
+      reason: 'Expected transactions destination in navigation bar',
+    );
+    await tester.tap(destinations.at(1));
+    await tester.pumpAndSettle();
   }
 
   testWidgets('Transactions tab shows filter chips', (tester) async {
     await bootApp(tester);
-
-    final isOnShell = find.byType(NavigationBar).evaluate().isNotEmpty;
-    if (!isOnShell) return; // skip if onboarding flow
 
     await goToTransactions(tester);
 
@@ -43,14 +47,11 @@ void main() {
   testWidgets('Add transaction sheet opens via FAB', (tester) async {
     await bootApp(tester);
 
-    final isOnShell = find.byType(NavigationBar).evaluate().isNotEmpty;
-    if (!isOnShell) return;
-
     await goToTransactions(tester);
 
     // Tap FAB
     final fab = find.byType(FloatingActionButton);
-    if (fab.evaluate().isEmpty) return;
+    expect(fab, findsWidgets, reason: 'Transactions screen should expose FAB');
     await tester.tap(fab.first);
     await tester.pumpAndSettle();
 
@@ -65,13 +66,10 @@ void main() {
   testWidgets('Tapping Income filter chip updates UI', (tester) async {
     await bootApp(tester);
 
-    final isOnShell = find.byType(NavigationBar).evaluate().isNotEmpty;
-    if (!isOnShell) return;
-
     await goToTransactions(tester);
 
     final incomeChip = find.text('Income');
-    if (incomeChip.evaluate().isEmpty) return;
+    expect(incomeChip, findsWidgets);
 
     await tester.tap(incomeChip.first);
     await tester.pumpAndSettle();
@@ -85,19 +83,15 @@ void main() {
   testWidgets('Search bar filters list by query', (tester) async {
     await bootApp(tester);
 
-    final isOnShell = find.byType(NavigationBar).evaluate().isNotEmpty;
-    if (!isOnShell) return;
-
     await goToTransactions(tester);
 
     final searchField = find.byType(TextField);
-    if (searchField.evaluate().isEmpty) return;
+    expect(searchField, findsWidgets);
 
     await tester.enterText(searchField.first, 'zzzzunlikely');
     await tester.pumpAndSettle(const Duration(milliseconds: 500));
 
-    // With an unlikely query, either no transactions or empty state visible
-    // — just ensure the UI doesn't crash
-    expect(find.byType(Scaffold), findsWidgets);
+    // With an unlikely query, ensure search field still exists and app remains interactive.
+    expect(find.byType(TextField), findsWidgets);
   });
 }

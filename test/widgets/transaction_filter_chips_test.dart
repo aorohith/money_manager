@@ -20,21 +20,23 @@ void main() {
       await tester.pumpApp(const Scaffold(body: TransactionFilterChips()));
 
       final chips = tester.widgetList<FilterChip>(find.byType(FilterChip));
-      final allChip =
-          chips.firstWhere((c) => (c.label as Text).data == 'All');
+      final allChip = chips.firstWhere((c) => (c.label as Text).data == 'All');
       expect(allChip.selected, isTrue);
 
-      final incomeChip =
-          chips.firstWhere((c) => (c.label as Text).data == 'Income');
+      final incomeChip = chips.firstWhere(
+        (c) => (c.label as Text).data == 'Income',
+      );
       expect(incomeChip.selected, isFalse);
 
-      final expenseChip =
-          chips.firstWhere((c) => (c.label as Text).data == 'Expense');
+      final expenseChip = chips.firstWhere(
+        (c) => (c.label as Text).data == 'Expense',
+      );
       expect(expenseChip.selected, isFalse);
     });
 
-    testWidgets('tapping Income updates filter to isIncome=true',
-        (tester) async {
+    testWidgets('tapping Income updates filter to isIncome=true', (
+      tester,
+    ) async {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
@@ -53,8 +55,9 @@ void main() {
       expect(container.read(transactionFilterProvider).isIncome, isTrue);
     });
 
-    testWidgets('tapping Expense updates filter to isIncome=false',
-        (tester) async {
+    testWidgets('tapping Expense updates filter to isIncome=false', (
+      tester,
+    ) async {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
@@ -73,12 +76,16 @@ void main() {
       expect(container.read(transactionFilterProvider).isIncome, isFalse);
     });
 
-    testWidgets('tapping active Income chip again resets to All',
-        (tester) async {
-      final container = ProviderContainer(overrides: [
-        transactionFilterProvider
-            .overrideWith((_) => const TransactionFilter(isIncome: true)),
-      ]);
+    testWidgets('tapping active Income chip again resets to All', (
+      tester,
+    ) async {
+      final container = ProviderContainer(
+        overrides: [
+          transactionFilterProvider.overrideWith(
+            (_) => const TransactionFilter(isIncome: true),
+          ),
+        ],
+      );
       addTearDown(container.dispose);
 
       await tester.pumpWidget(

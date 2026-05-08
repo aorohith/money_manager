@@ -117,10 +117,9 @@ void main() {
     });
 
     test('passes filters to repo', () async {
-      when(() => repo.getAll(
-            isIncome: false,
-            categoryId: 3,
-          )).thenAnswer((_) async => []);
+      when(
+        () => repo.getAll(isIncome: false, categoryId: 3),
+      ).thenAnswer((_) async => []);
 
       await getUC(isIncome: false, categoryId: 3);
 
@@ -138,8 +137,9 @@ void main() {
 
   group('GetCategorySummaryUseCase', () {
     test('sums amounts by categoryId', () async {
-      when(() => repo.getCategorySummary(isIncome: false))
-          .thenAnswer((_) async => {1: 250.0, 2: 100.0});
+      when(
+        () => repo.getCategorySummary(isIncome: false),
+      ).thenAnswer((_) async => {1: 250.0, 2: 100.0});
 
       final result = await summaryUC(isIncome: false);
 
@@ -205,10 +205,10 @@ void main() {
     });
   });
 
-  group('AppFormatters', () {
-    test('currency formats correctly', () {
-      // Basic smoke test - real formatting tested via integration
-      expect(() {}, returnsNormally);
+  group('TransactionModel defaults', () {
+    test('entryType defaults to regular', () {
+      final tx = _makeTx();
+      expect(tx.entryType, TransactionEntryType.regular);
     });
   });
 }

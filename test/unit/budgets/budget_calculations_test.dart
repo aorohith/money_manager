@@ -139,29 +139,45 @@ void main() {
   group('BudgetProgress — dailyAllowance', () {
     test('remaining spread over days left', () {
       // $500 limit, $200 spent → $300 remaining; day 15 of 30 → 15 days left
-      final p =
-          makeProgress(limit: 500, spent: 200, daysInPeriod: 30, daysElapsed: 15);
+      final p = makeProgress(
+        limit: 500,
+        spent: 200,
+        daysInPeriod: 30,
+        daysElapsed: 15,
+      );
       // 300 / 15 = 20
       expect(p.dailyAllowance, closeTo(20.0, 0.001));
     });
 
     test('0 when no days left', () {
-      final p =
-          makeProgress(limit: 500, spent: 200, daysInPeriod: 30, daysElapsed: 30);
+      final p = makeProgress(
+        limit: 500,
+        spent: 200,
+        daysInPeriod: 30,
+        daysElapsed: 30,
+      );
       expect(p.dailyAllowance, 0);
     });
 
     test('negative when over budget with days remaining', () {
       // $500 limit, $600 spent → -$100 remaining; 15 days left
-      final p =
-          makeProgress(limit: 500, spent: 600, daysInPeriod: 30, daysElapsed: 15);
+      final p = makeProgress(
+        limit: 500,
+        spent: 600,
+        daysInPeriod: 30,
+        daysElapsed: 15,
+      );
       expect(p.dailyAllowance, closeTo(-100 / 15, 0.001));
     });
 
     test('full remaining when day 0', () {
       // day 1 of 30 elapsed, full remaining
       final p = makeProgress(
-          limit: 600, spent: 0, daysInPeriod: 30, daysElapsed: 1);
+        limit: 600,
+        spent: 0,
+        daysInPeriod: 30,
+        daysElapsed: 1,
+      );
       // 600 / 29 ≈ 20.69
       expect(p.dailyAllowance, closeTo(600 / 29, 0.01));
     });
@@ -170,27 +186,43 @@ void main() {
   group('BudgetProgress — projectedMonthEnd', () {
     test('linear projection: 0 elapsed → 0', () {
       final p = makeProgress(
-          limit: 500, spent: 300, daysInPeriod: 30, daysElapsed: 0);
+        limit: 500,
+        spent: 300,
+        daysInPeriod: 30,
+        daysElapsed: 0,
+      );
       expect(p.projectedMonthEnd, 0);
     });
 
     test('linear projection mid-month', () {
       // $300 spent in 15 days → $300/15 * 30 = $600 projected
       final p = makeProgress(
-          limit: 500, spent: 300, daysInPeriod: 30, daysElapsed: 15);
+        limit: 500,
+        spent: 300,
+        daysInPeriod: 30,
+        daysElapsed: 15,
+      );
       expect(p.projectedMonthEnd, closeTo(600, 0.001));
     });
 
     test('on-track projection equals limit when exactly paced', () {
       // $250 spent in 15 days → $250/15 * 30 = $500 (matches limit)
       final p = makeProgress(
-          limit: 500, spent: 250, daysInPeriod: 30, daysElapsed: 15);
+        limit: 500,
+        spent: 250,
+        daysInPeriod: 30,
+        daysElapsed: 15,
+      );
       expect(p.projectedMonthEnd, closeTo(500, 0.001));
     });
 
     test('end of month: projected equals spent', () {
       final p = makeProgress(
-          limit: 500, spent: 450, daysInPeriod: 30, daysElapsed: 30);
+        limit: 500,
+        spent: 450,
+        daysInPeriod: 30,
+        daysElapsed: 30,
+      );
       expect(p.projectedMonthEnd, closeTo(450, 0.001));
     });
   });

@@ -74,12 +74,20 @@ void main() {
     test('returns weekday name for 2-6 days ago', () {
       final threeDaysAgo = DateTime.now().subtract(const Duration(days: 3));
       final d = DateTime(
-          threeDaysAgo.year, threeDaysAgo.month, threeDaysAgo.day);
+        threeDaysAgo.year,
+        threeDaysAgo.month,
+        threeDaysAgo.day,
+      );
       final result = AppFormatters.groupDate(d);
       // Should be a day name (e.g. "Monday"), not "Today" or "Yesterday"
       const dayNames = [
-        'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-        'Friday', 'Saturday', 'Sunday'
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
       ];
       expect(dayNames, contains(result));
     });

@@ -35,10 +35,16 @@ void main() {
     });
 
     test('user rule with unknown merchant still wins', () {
-      final rule = SmsRuleModel(merchantKey: 'UNKNOWN_MERCHANT', categoryId: 42);
+      final rule = SmsRuleModel(
+        merchantKey: 'UNKNOWN_MERCHANT',
+        categoryId: 42,
+      );
 
-      final result =
-          engine.categorize('UNKNOWN_MERCHANT', categories, userRule: rule);
+      final result = engine.categorize(
+        'UNKNOWN_MERCHANT',
+        categories,
+        userRule: rule,
+      );
       expect(result.source, CategorizationSource.userRule);
     });
   });
@@ -71,8 +77,7 @@ void main() {
     });
 
     test('unknown merchant with no keyword match uses fallback', () {
-      final result =
-          engine.categorize('XYZCOMPANY12345UNKNOWN', categories);
+      final result = engine.categorize('XYZCOMPANY12345UNKNOWN', categories);
       expect(result.source, CategorizationSource.fallback);
       expect(result.confidence, 0.30);
     });
@@ -82,14 +87,18 @@ void main() {
 
   group('Tier 4 – fallback', () {
     test('fallback confidence is 0.30', () {
-      final result =
-          engine.categorize('TOTALLY_UNKNOWN_VENDOR_XYZ', categories);
+      final result = engine.categorize(
+        'TOTALLY_UNKNOWN_VENDOR_XYZ',
+        categories,
+      );
       expect(result.confidence, 0.30);
     });
 
     test('fallback picks "Other" category id', () {
-      final result =
-          engine.categorize('TOTALLY_UNKNOWN_VENDOR_XYZ', categories);
+      final result = engine.categorize(
+        'TOTALLY_UNKNOWN_VENDOR_XYZ',
+        categories,
+      );
       expect(result.categoryId, 5); // id of 'Other'
     });
 
