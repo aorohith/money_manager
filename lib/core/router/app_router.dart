@@ -28,6 +28,8 @@ import '../../features/sms/presentation/screens/sms_onboarding_screen.dart';
 import '../../features/sms/presentation/screens/sms_settings_screen.dart';
 import '../../features/transactions/presentation/screens/manage_accounts_screen.dart';
 import '../../features/transactions/presentation/screens/manage_categories_screen.dart';
+import '../../features/transactions/presentation/screens/account_detail_screen.dart';
+import '../../features/transactions/presentation/screens/reconciliation_screen.dart';
 import '../../features/transactions/presentation/screens/transactions_screen.dart';
 
 part 'app_routes.dart';
@@ -128,12 +130,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: 'category/:id',
                 name: AppRouteNames.analyticsCategory,
                 builder: (_, state) {
-                  final categoryId =
-                      int.parse(state.pathParameters['id']!);
+                  final categoryId = int.parse(state.pathParameters['id']!);
                   final params = state.extra as AnalyticsParams?;
                   return CategoryDetailScreen(
                     categoryId: categoryId,
-                    analyticsParams: params ??
+                    analyticsParams:
+                        params ??
                         AnalyticsParams(
                           period: AnalyticsPeriod.month,
                           referenceDate: DateTime.now(),
@@ -191,6 +193,20 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: AppRoutes.manageAccounts,
             name: AppRouteNames.manageAccounts,
             builder: (_, __) => const ManageAccountsScreen(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                name: AppRouteNames.accountDetail,
+                builder: (_, state) => AccountDetailScreen(
+                  accountId: int.parse(state.pathParameters['id']!),
+                ),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: AppRoutes.reconciliation,
+            name: AppRouteNames.reconciliation,
+            builder: (_, __) => const ReconciliationScreen(),
           ),
           if (kDebugMode)
             GoRoute(
@@ -214,7 +230,6 @@ class _AuthStatusListenable extends ChangeNotifier {
     });
   }
 }
-
 
 class _AppShell extends StatelessWidget {
   const _AppShell({required this.child});
@@ -240,9 +255,7 @@ class _AppShell extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
-              color: isDark
-                  ? AppColors.outlineDark
-                  : AppColors.outline,
+              color: isDark ? AppColors.outlineDark : AppColors.outline,
               width: 1,
             ),
           ),

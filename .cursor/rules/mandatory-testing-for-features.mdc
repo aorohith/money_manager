@@ -1,0 +1,15 @@
+---
+description: Mandatory test coverage and verification for new features and UI changes
+alwaysApply: true
+---
+
+# Mandatory Testing For Feature Changes
+
+- For any new feature, UI addition, or behavioral change, add or update test cases that cover:
+  - Happy path behavior
+  - Relevant edge/error states
+  - Regression risk for touched flows
+- Run all newly added or updated tests and confirm they pass before completing work.
+- If the change affects dependent features/modules, run tests for those dependent areas too.
+- Do not mark work complete until required tests are implemented and verified as passing.
+- If test execution is blocked (environment/tooling), clearly report what was attempted, what failed, and exact commands needed to verify.

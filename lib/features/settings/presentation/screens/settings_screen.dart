@@ -80,6 +80,17 @@ class SettingsScreen extends ConsumerWidget {
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),
+                const SizedBox(height: AppSpacing.sm),
+                AppCard(
+                  onTap: () => context.push(AppRoutes.reconciliation),
+                  child: const ListTile(
+                    leading: Icon(Icons.balance_rounded),
+                    title: Text('Reconciliation'),
+                    subtitle: Text('Resolve account balance discrepancies'),
+                    trailing: Icon(Icons.chevron_right_rounded, size: 18),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.lg),
 
                 // Auto-detection
@@ -140,12 +151,12 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-        text,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-      );
+    text,
+    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+      fontWeight: FontWeight.w600,
+    ),
+  );
 }
 
 // ── Profile card ──────────────────────────────────────────────────────────────
@@ -172,8 +183,10 @@ class _ProfileCard extends ConsumerWidget {
             ),
           ),
         ),
-        title: Text(name.isNotEmpty ? name : 'Set up profile',
-            style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(
+          name.isNotEmpty ? name : 'Set up profile',
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
         subtitle: const Text('Tap to edit profile'),
         trailing: const Icon(Icons.chevron_right_rounded),
         contentPadding: EdgeInsets.zero,
@@ -275,8 +288,7 @@ class _ChangePinTile extends StatelessWidget {
 class _BiometricTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final enabled =
-        ref.watch(biometricEnabledProvider).valueOrNull ?? false;
+    final enabled = ref.watch(biometricEnabledProvider).valueOrNull ?? false;
 
     return AppCard(
       child: SwitchListTile(
@@ -285,16 +297,54 @@ class _BiometricTile extends ConsumerWidget {
         subtitle: const Text('Use fingerprint or face to unlock'),
         value: enabled,
         onChanged: (v) async {
-          final hasBio = await ref.read(authProvider.notifier).hasBiometrics;
-          if (!hasBio) {
+          final authNotifier = ref.read(authProvider.notifier);
+
+          if (!v) {
+            await ref.read(biometricEnabledProvider.notifier).toggle(false);
             if (context.mounted) {
-              showAppSnackBar(context,
-                  message: 'Biometrics not available on this device',
-                  type: AppSnackBarType.error);
+              showAppSnackBar(
+                context,
+                message: 'Biometric unlock disabled',
+                type: AppSnackBarType.info,
+              );
             }
             return;
           }
-          ref.read(biometricEnabledProvider.notifier).toggle(v);
+
+          final hasBio = await authNotifier.hasBiometrics;
+          if (!hasBio) {
+            if (context.mounted) {
+              showAppSnackBar(
+                context,
+                message: 'Biometrics not available on this device',
+                type: AppSnackBarType.error,
+              );
+            }
+            return;
+          }
+
+          final verified = await authNotifier.confirmBiometricIdentity(
+            localizedReason: 'Confirm biometric to enable quick unlock',
+          );
+          if (!verified) {
+            if (context.mounted) {
+              showAppSnackBar(
+                context,
+                message: 'Biometric verification cancelled or failed',
+                type: AppSnackBarType.error,
+              );
+            }
+            return;
+          }
+
+          await ref.read(biometricEnabledProvider.notifier).toggle(true);
+          if (context.mounted) {
+            showAppSnackBar(
+              context,
+              message: 'Biometric unlock enabled',
+              type: AppSnackBarType.success,
+            );
+          }
         },
         contentPadding: EdgeInsets.zero,
       ),
@@ -336,14 +386,19 @@ class _ExportPdfTile extends ConsumerWidget {
   }
 }
 
-Future<void> _export(BuildContext context, WidgetRef ref,
-    {required bool csv}) async {
+Future<void> _export(
+  BuildContext context,
+  WidgetRef ref, {
+  required bool csv,
+}) async {
   try {
-    showAppSnackBar(context,
-        message: 'Preparing export…', type: AppSnackBarType.info);
+    showAppSnackBar(
+      context,
+      message: 'Preparing export…',
+      type: AppSnackBarType.info,
+    );
     final repo = ref.read(transactionRepositoryProvider);
-    final categories =
-        ref.read(categoriesProvider).valueOrNull ?? [];
+    final categories = ref.read(categoriesProvider).valueOrNull ?? [];
     final service = ExportService(repo, categories);
     final path = csv ? await service.exportCsv() : await service.exportPdf();
     await Share.shareXFiles(
@@ -354,8 +409,11 @@ Future<void> _export(BuildContext context, WidgetRef ref,
     );
   } catch (e) {
     if (context.mounted) {
-      showAppSnackBar(context,
-          message: 'Export failed: $e', type: AppSnackBarType.error);
+      showAppSnackBar(
+        context,
+        message: 'Export failed: $e',
+        type: AppSnackBarType.error,
+      );
     }
   }
 }
@@ -368,10 +426,14 @@ class _ClearDataTile extends ConsumerWidget {
     return AppCard(
       onTap: () => _confirmClear(context, ref),
       child: ListTile(
-        leading: Icon(Icons.delete_forever_rounded,
-            color: Theme.of(context).colorScheme.error),
-        title: Text('Clear All Data',
-            style: TextStyle(color: Theme.of(context).colorScheme.error)),
+        leading: Icon(
+          Icons.delete_forever_rounded,
+          color: Theme.of(context).colorScheme.error,
+        ),
+        title: Text(
+          'Clear All Data',
+          style: TextStyle(color: Theme.of(context).colorScheme.error),
+        ),
         subtitle: const Text('Delete all transactions, budgets, and settings'),
         contentPadding: EdgeInsets.zero,
       ),
@@ -384,7 +446,8 @@ class _ClearDataTile extends ConsumerWidget {
       builder: (_) => AlertDialog(
         title: const Text('Clear All Data'),
         content: const Text(
-            'This will permanently delete all your data and reset the app. This cannot be undone.'),
+          'This will permanently delete all your data and reset the app. This cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -392,8 +455,10 @@ class _ClearDataTile extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text('Clear Everything',
-                style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            child: Text(
+              'Clear Everything',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ),
         ],
       ),

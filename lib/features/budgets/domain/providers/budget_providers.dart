@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/database/isar_service.dart';
+import '../../../../core/notifications/notification_service.dart';
+import '../../../auth/providers/auth_provider.dart';
 import '../../../transactions/domain/providers/transaction_providers.dart';
 import '../../data/models/budget_model.dart';
 import '../../data/repositories/budget_repository.dart';
@@ -60,9 +64,24 @@ final budgetProgressListProvider =
   if (budgets.isEmpty) return [];
 
   final repo = ref.read(budgetRepositoryProvider);
-  return Future.wait(
+  final progressList = await Future.wait(
     budgets.map((b) => repo.getBudgetProgress(budget: b, month: month)),
   );
+
+  final symbol = ref.read(currencySymbolProvider).valueOrNull ?? '\$';
+  for (final p in progressList) {
+    if (p.isOver) {
+      unawaited(NotificationService.instance.showBudgetOverAlert(
+        budgetId: p.budget.id,
+        budgetName:
+            p.budget.categoryId == null ? 'Overall Budget' : 'Category Budget',
+        overBy: p.spent - p.effectiveLimit,
+        currencySymbol: symbol,
+      ));
+    }
+  }
+
+  return progressList;
 });
 
 // ── Overall budget progress ───────────────────────────────────────────────────

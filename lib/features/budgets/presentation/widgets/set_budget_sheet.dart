@@ -85,7 +85,7 @@ class _SetBudgetFormState extends ConsumerState<_SetBudgetForm> {
         );
 
     budget
-      ..limitAmount = double.parse(_amountCtrl.text.replaceAll(',', ''))
+      ..limitAmount = double.tryParse(_amountCtrl.text.replaceAll(',', '')) ?? 0
       ..categoryId = _isOverall ? null : _selectedCategoryId
       ..period = _period
       ..month = month

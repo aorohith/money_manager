@@ -47,6 +47,11 @@ const BudgetModelSchema = CollectionSchema(
       id: 5,
       name: r'rolloverEnabled',
       type: IsarType.bool,
+    ),
+    r'updatedAt': PropertySchema(
+      id: 6,
+      name: r'updatedAt',
+      type: IsarType.dateTime,
     )
   },
   estimateSize: _budgetModelEstimateSize,
@@ -111,6 +116,7 @@ void _budgetModelSerialize(
   writer.writeByte(offsets[3], object.period.index);
   writer.writeDouble(offsets[4], object.rolloverAmount);
   writer.writeBool(offsets[5], object.rolloverEnabled);
+  writer.writeDateTime(offsets[6], object.updatedAt);
 }
 
 BudgetModel _budgetModelDeserialize(
@@ -129,6 +135,7 @@ BudgetModel _budgetModelDeserialize(
   );
   object.id = id;
   object.rolloverAmount = reader.readDouble(offsets[4]);
+  object.updatedAt = reader.readDateTime(offsets[6]);
   return object;
 }
 
@@ -152,6 +159,8 @@ P _budgetModelDeserializeProp<P>(
       return (reader.readDouble(offset)) as P;
     case 5:
       return (reader.readBoolOrNull(offset) ?? false) as P;
+    case 6:
+      return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -855,6 +864,62 @@ extension BudgetModelQueryFilter
       ));
     });
   }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition>
+      updatedAtEqualTo(DateTime value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'updatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition>
+      updatedAtGreaterThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'updatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition>
+      updatedAtLessThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'updatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterFilterCondition>
+      updatedAtBetween(
+    DateTime lower,
+    DateTime upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'updatedAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
 }
 
 extension BudgetModelQueryObject
@@ -936,6 +1001,18 @@ extension BudgetModelQuerySortBy
       sortByRolloverEnabledDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'rolloverEnabled', Sort.desc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> sortByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> sortByUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.desc);
     });
   }
 }
@@ -1027,6 +1104,18 @@ extension BudgetModelQuerySortThenBy
       return query.addSortBy(r'rolloverEnabled', Sort.desc);
     });
   }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> thenByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QAfterSortBy> thenByUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.desc);
+    });
+  }
 }
 
 extension BudgetModelQueryWhereDistinct
@@ -1065,6 +1154,12 @@ extension BudgetModelQueryWhereDistinct
       distinctByRolloverEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'rolloverEnabled');
+    });
+  }
+
+  QueryBuilder<BudgetModel, BudgetModel, QDistinct> distinctByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'updatedAt');
     });
   }
 }
@@ -1110,6 +1205,12 @@ extension BudgetModelQueryProperty
   QueryBuilder<BudgetModel, bool, QQueryOperations> rolloverEnabledProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'rolloverEnabled');
+    });
+  }
+
+  QueryBuilder<BudgetModel, DateTime, QQueryOperations> updatedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'updatedAt');
     });
   }
 }

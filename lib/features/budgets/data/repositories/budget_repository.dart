@@ -79,6 +79,7 @@ class BudgetRepositoryImpl implements BudgetRepository {
 
   @override
   Future<void> setBudget(BudgetModel budget) async {
+    budget.updatedAt = DateTime.now();
     await _isar.writeTxn(() async {
       await _isar.budgetModels.put(budget);
     });
@@ -126,7 +127,7 @@ class BudgetRepositoryImpl implements BudgetRepository {
         ? 0
         : now.isAfter(to)
             ? daysInPeriod
-            : now.day;
+            : now.difference(from).inDays + 1;
 
     final double spent;
     if (budget.categoryId == null) {

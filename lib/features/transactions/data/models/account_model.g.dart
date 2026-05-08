@@ -17,38 +17,43 @@ const AccountModelSchema = CollectionSchema(
   name: r'AccountModel',
   id: -4417758972305866022,
   properties: {
-    r'colorValue': PropertySchema(
+    r'actualBalance': PropertySchema(
       id: 0,
+      name: r'actualBalance',
+      type: IsarType.double,
+    ),
+    r'colorValue': PropertySchema(
+      id: 1,
       name: r'colorValue',
       type: IsarType.long,
     ),
     r'iconCodePoint': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'iconCodePoint',
       type: IsarType.long,
     ),
     r'initialBalance': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'initialBalance',
       type: IsarType.double,
     ),
     r'isDefault': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'isDefault',
       type: IsarType.bool,
     ),
     r'name': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'name',
       type: IsarType.string,
     ),
     r'updatedAt': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
     r'userId': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'userId',
       type: IsarType.string,
     )
@@ -89,13 +94,14 @@ void _accountModelSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeLong(offsets[0], object.colorValue);
-  writer.writeLong(offsets[1], object.iconCodePoint);
-  writer.writeDouble(offsets[2], object.initialBalance);
-  writer.writeBool(offsets[3], object.isDefault);
-  writer.writeString(offsets[4], object.name);
-  writer.writeDateTime(offsets[5], object.updatedAt);
-  writer.writeString(offsets[6], object.userId);
+  writer.writeDouble(offsets[0], object.actualBalance);
+  writer.writeLong(offsets[1], object.colorValue);
+  writer.writeLong(offsets[2], object.iconCodePoint);
+  writer.writeDouble(offsets[3], object.initialBalance);
+  writer.writeBool(offsets[4], object.isDefault);
+  writer.writeString(offsets[5], object.name);
+  writer.writeDateTime(offsets[6], object.updatedAt);
+  writer.writeString(offsets[7], object.userId);
 }
 
 AccountModel _accountModelDeserialize(
@@ -105,15 +111,16 @@ AccountModel _accountModelDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = AccountModel(
-    colorValue: reader.readLong(offsets[0]),
-    iconCodePoint: reader.readLong(offsets[1]),
-    initialBalance: reader.readDoubleOrNull(offsets[2]) ?? 0.0,
-    isDefault: reader.readBoolOrNull(offsets[3]) ?? false,
-    name: reader.readString(offsets[4]),
+    actualBalance: reader.readDoubleOrNull(offsets[0]),
+    colorValue: reader.readLong(offsets[1]),
+    iconCodePoint: reader.readLong(offsets[2]),
+    initialBalance: reader.readDoubleOrNull(offsets[3]) ?? 0.0,
+    isDefault: reader.readBoolOrNull(offsets[4]) ?? false,
+    name: reader.readString(offsets[5]),
   );
   object.id = id;
-  object.updatedAt = reader.readDateTime(offsets[5]);
-  object.userId = reader.readStringOrNull(offsets[6]);
+  object.updatedAt = reader.readDateTime(offsets[6]);
+  object.userId = reader.readStringOrNull(offsets[7]);
   return object;
 }
 
@@ -125,18 +132,20 @@ P _accountModelDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readLong(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 1:
       return (reader.readLong(offset)) as P;
     case 2:
-      return (reader.readDoubleOrNull(offset) ?? 0.0) as P;
+      return (reader.readLong(offset)) as P;
     case 3:
-      return (reader.readBoolOrNull(offset) ?? false) as P;
+      return (reader.readDoubleOrNull(offset) ?? 0.0) as P;
     case 4:
-      return (reader.readString(offset)) as P;
+      return (reader.readBoolOrNull(offset) ?? false) as P;
     case 5:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 6:
+      return (reader.readDateTime(offset)) as P;
+    case 7:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -237,6 +246,90 @@ extension AccountModelQueryWhere
 
 extension AccountModelQueryFilter
     on QueryBuilder<AccountModel, AccountModel, QFilterCondition> {
+  QueryBuilder<AccountModel, AccountModel, QAfterFilterCondition>
+      actualBalanceIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'actualBalance',
+      ));
+    });
+  }
+
+  QueryBuilder<AccountModel, AccountModel, QAfterFilterCondition>
+      actualBalanceIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'actualBalance',
+      ));
+    });
+  }
+
+  QueryBuilder<AccountModel, AccountModel, QAfterFilterCondition>
+      actualBalanceEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'actualBalance',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AccountModel, AccountModel, QAfterFilterCondition>
+      actualBalanceGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'actualBalance',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AccountModel, AccountModel, QAfterFilterCondition>
+      actualBalanceLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'actualBalance',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AccountModel, AccountModel, QAfterFilterCondition>
+      actualBalanceBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'actualBalance',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
   QueryBuilder<AccountModel, AccountModel, QAfterFilterCondition>
       colorValueEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
@@ -830,6 +923,19 @@ extension AccountModelQueryLinks
 
 extension AccountModelQuerySortBy
     on QueryBuilder<AccountModel, AccountModel, QSortBy> {
+  QueryBuilder<AccountModel, AccountModel, QAfterSortBy> sortByActualBalance() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'actualBalance', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AccountModel, AccountModel, QAfterSortBy>
+      sortByActualBalanceDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'actualBalance', Sort.desc);
+    });
+  }
+
   QueryBuilder<AccountModel, AccountModel, QAfterSortBy> sortByColorValue() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'colorValue', Sort.asc);
@@ -921,6 +1027,19 @@ extension AccountModelQuerySortBy
 
 extension AccountModelQuerySortThenBy
     on QueryBuilder<AccountModel, AccountModel, QSortThenBy> {
+  QueryBuilder<AccountModel, AccountModel, QAfterSortBy> thenByActualBalance() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'actualBalance', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AccountModel, AccountModel, QAfterSortBy>
+      thenByActualBalanceDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'actualBalance', Sort.desc);
+    });
+  }
+
   QueryBuilder<AccountModel, AccountModel, QAfterSortBy> thenByColorValue() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'colorValue', Sort.asc);
@@ -1024,6 +1143,13 @@ extension AccountModelQuerySortThenBy
 
 extension AccountModelQueryWhereDistinct
     on QueryBuilder<AccountModel, AccountModel, QDistinct> {
+  QueryBuilder<AccountModel, AccountModel, QDistinct>
+      distinctByActualBalance() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'actualBalance');
+    });
+  }
+
   QueryBuilder<AccountModel, AccountModel, QDistinct> distinctByColorValue() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'colorValue');
@@ -1076,6 +1202,13 @@ extension AccountModelQueryProperty
   QueryBuilder<AccountModel, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<AccountModel, double?, QQueryOperations>
+      actualBalanceProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'actualBalance');
     });
   }
 

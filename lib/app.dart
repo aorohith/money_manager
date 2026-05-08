@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/theme.dart';
 import 'features/auth/providers/auth_provider.dart';
+import 'features/settings/domain/providers/settings_providers.dart';
 import 'features/transactions/domain/providers/transaction_providers.dart';
 
 class App extends ConsumerStatefulWidget {
@@ -58,7 +59,7 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
+      themeMode: ref.watch(themeModeProvider).valueOrNull ?? ThemeMode.system,
       routerConfig: router,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,

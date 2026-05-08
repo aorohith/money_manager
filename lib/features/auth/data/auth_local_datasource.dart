@@ -84,4 +84,36 @@ class AuthLocalDatasource {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_kCurrencySymbol) ?? '\$';
   }
+
+  // ── Theme ───────────────────────────────────────────────────────────────
+
+  Future<String> getThemeMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('theme_mode') ?? 'system';
+  }
+
+  Future<void> saveThemeMode(String mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('theme_mode', mode);
+  }
+
+  // ── Biometric preference ────────────────────────────────────────────────
+
+  Future<bool> getBiometricEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('biometric_enabled') ?? false;
+  }
+
+  Future<void> saveBiometricEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('biometric_enabled', enabled);
+  }
+
+  // ── Clear all data ──────────────────────────────────────────────────────
+
+  Future<void> clearAllData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    await _secure.deleteAll();
+  }
 }

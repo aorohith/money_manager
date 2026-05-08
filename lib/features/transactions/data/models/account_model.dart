@@ -10,6 +10,7 @@ class AccountModel {
     required this.iconCodePoint,
     required this.colorValue,
     this.initialBalance = 0.0,
+    this.actualBalance,
     this.isDefault = false,
   });
 
@@ -19,6 +20,7 @@ class AccountModel {
   late int iconCodePoint;
   late int colorValue;
   late double initialBalance;
+  double? actualBalance;
   late bool isDefault;
 
   DateTime updatedAt = DateTime.now();

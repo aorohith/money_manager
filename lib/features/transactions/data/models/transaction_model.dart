@@ -12,6 +12,7 @@ class TransactionModel {
     required this.isIncome,
     this.note,
     this.recurrence = RecurrenceType.none,
+    this.entryType = TransactionEntryType.regular,
     this.isDeleted = false,
   });
 
@@ -37,6 +38,9 @@ class TransactionModel {
   @enumerated
   late RecurrenceType recurrence;
 
+  @enumerated
+  late TransactionEntryType entryType;
+
   late bool isDeleted;
 
   /// Last write timestamp — used for future cloud sync conflict resolution.
@@ -47,10 +51,6 @@ class TransactionModel {
   String? userId;
 }
 
-enum RecurrenceType {
-  none,
-  daily,
-  weekly,
-  monthly,
-  yearly,
-}
+enum RecurrenceType { none, daily, weekly, monthly, yearly }
+
+enum TransactionEntryType { regular, adjustment }

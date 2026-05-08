@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
 
@@ -14,12 +15,11 @@ final authProvider =
     AsyncNotifierProvider<AuthNotifier, AuthStatus>(AuthNotifier.new);
 
 class AuthNotifier extends AsyncNotifier<AuthStatus> {
-  late AuthLocalDatasource _ds;
   final _localAuth = LocalAuthentication();
+  AuthLocalDatasource get _ds => ref.read(authDatasourceProvider);
 
   @override
   Future<AuthStatus> build() async {
-    _ds = ref.read(authDatasourceProvider);
     return _resolveInitialStatus();
   }
 
@@ -56,21 +56,43 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
 
   /// Returns true if biometric succeeded.
   Future<bool> unlockWithBiometric() async {
+    final biometricEnabled = await _ds.getBiometricEnabled();
+    if (!biometricEnabled) return false;
+
+    final ok = await _authenticateBiometric(
+      localizedReason: 'Unlock Money Manager',
+    );
+    if (ok) state = const AsyncData(AuthStatus.authenticated);
+    return ok;
+  }
+
+  Future<bool> confirmBiometricIdentity({
+    required String localizedReason,
+  }) {
+    return _authenticateBiometric(localizedReason: localizedReason);
+  }
+
+  Future<bool> _authenticateBiometric({
+    required String localizedReason,
+  }) async {
     try {
-      final canCheck = await _localAuth.canCheckBiometrics;
-      final isDeviceSupported = await _localAuth.isDeviceSupported();
-      if (!canCheck && !isDeviceSupported) return false;
+      final availableBiometrics = await _localAuth.getAvailableBiometrics();
+      if (availableBiometrics.isEmpty) return false;
 
       final ok = await _localAuth.authenticate(
-        localizedReason: 'Unlock Money Manager',
+        localizedReason: localizedReason,
         options: const AuthenticationOptions(
-          biometricOnly: false,
+          biometricOnly: true,
           stickyAuth: true,
+          useErrorDialogs: true,
         ),
       );
-      if (ok) state = const AsyncData(AuthStatus.authenticated);
       return ok;
-    } catch (_) {
+    } catch (e, st) {
+      // Log so that biometric failures are visible during debugging.
+      // PlatformException is the most common cause (e.g. biometrics not
+      // enrolled, hardware unavailable).
+      debugPrint('[AuthNotifier] unlockWithBiometric failed: $e\n$st');
       return false;
     }
   }
@@ -91,12 +113,15 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
 
   Future<bool> get hasBiometrics async {
     try {
-      return await _localAuth.canCheckBiometrics ||
-          await _localAuth.isDeviceSupported();
-    } catch (_) {
+      final biometrics = await _localAuth.getAvailableBiometrics();
+      return biometrics.isNotEmpty;
+    } catch (e, st) {
+      debugPrint('[AuthNotifier] hasBiometrics check failed: $e\n$st');
       return false;
     }
   }
+
+  Future<bool> get isBiometricUnlockEnabled => _ds.getBiometricEnabled();
 }
 
 // ── Convenience derived providers ─────────────────────────────────────────

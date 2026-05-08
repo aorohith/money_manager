@@ -26,6 +26,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       name: _nameController.text.trim(),
       colorValue: AppColors.avatarTones[_selectedColorIndex].toARGB32(),
     );
+    await ref.read(authProvider.notifier).completeOnboarding();
     if (mounted) context.go(AppRoutes.pinSetup);
   }
 

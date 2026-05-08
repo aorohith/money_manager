@@ -33,4 +33,6 @@ class BudgetModel {
 
   /// Extra amount rolled over from previous period (added to limit effectively)
   double rolloverAmount = 0;
+
+  DateTime updatedAt = DateTime.now();
 }

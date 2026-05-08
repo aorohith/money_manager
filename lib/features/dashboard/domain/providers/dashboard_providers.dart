@@ -52,6 +52,11 @@ class DashboardData {
 
 // ── Dashboard provider (stream — reacts to new transactions) ─────────────────
 
+/// Streams [DashboardData] for the selected [DashboardPeriod].
+///
+/// Uses [TransactionRepository.watchAll] as the trigger so the dashboard
+/// automatically refreshes whenever a transaction is added, edited, or deleted.
+/// All heavy queries inside the loop are parallelised with [Future.wait].
 final dashboardProvider =
     StreamProvider.autoDispose<DashboardData>((ref) async* {
   final period = ref.watch(dashboardPeriodProvider);
@@ -60,8 +65,9 @@ final dashboardProvider =
 
   final (from, to) = _periodRange(period);
 
-  // Re-emit whenever Isar changes
+  // Re-emit whenever Isar changes.
   await for (final _ in repo.watchAll(from: from, to: to)) {
+    // Run all queries concurrently for performance.
     final results = await Future.wait([
       repo.getTotalIncome(from: from, to: to),
       repo.getTotalExpense(from: from, to: to),
@@ -72,19 +78,34 @@ final dashboardProvider =
       _getWeekExpense(repo),
     ]);
 
+    // Unpack into named variables before use.  This keeps the mapping
+    // explicit so that any future reordering of the list above is caught
+    // immediately at the cast site rather than silently producing wrong data.
+    final totalIncome        = results[0] as double;
+    final totalExpense       = results[1] as double;
+    final allTransactions    = results[2] as List<TransactionModel>;
+    final categorySummary    = results[3] as Map<int, double>;
+    final categories         = results[4] as List<CategoryModel>;
+    final todayExpense       = results[5] as double;
+    final weekExpense        = results[6] as double;
+
     yield DashboardData(
-      totalIncome: results[0] as double,
-      totalExpense: results[1] as double,
-      recentTransactions:
-          (results[2] as List<TransactionModel>).take(5).toList(),
-      categoryExpenseSummary: results[3] as Map<int, double>,
-      categories: results[4] as List<CategoryModel>,
-      todayExpense: results[5] as double,
-      weekExpense: results[6] as double,
+      totalIncome: totalIncome,
+      totalExpense: totalExpense,
+      recentTransactions: allTransactions.take(5).toList(),
+      categoryExpenseSummary: categorySummary,
+      categories: categories,
+      todayExpense: todayExpense,
+      weekExpense: weekExpense,
     );
   }
 });
 
+/// Returns the inclusive [from, to) date range for a given [DashboardPeriod].
+///
+/// The end of range is always set to 1 microsecond before midnight of the
+/// next period's start so that Isar's `dateLessThan` filter captures the
+/// last transaction of the day without crossing into the following period.
 (DateTime, DateTime) _periodRange(DashboardPeriod period) {
   final now = DateTime.now();
   switch (period) {

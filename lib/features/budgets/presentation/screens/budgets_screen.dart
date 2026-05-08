@@ -94,7 +94,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     final now = DateTime.now();
     final suffix =
         (year != now.year) ? ' $year' : '';
-    return '${months[mo]}$suffix';
+    return '${months[mo.clamp(1, 12)]}$suffix';
   }
 
   @override
@@ -603,11 +603,12 @@ class _CategoryBudgetGrid extends ConsumerWidget {
       itemCount: progresses.length,
       itemBuilder: (_, i) {
         final p = progresses[i];
+        // Use _fallbackCategory() whenever the exact category ID cannot be
+        // resolved — avoids showing a wrong category and prevents a crash
+        // when the categories list is empty.
         final cat = categories.firstWhere(
           (c) => c.id == p.budget.categoryId,
-          orElse: () => categories.isNotEmpty
-              ? categories.first
-              : _fallbackCategory(),
+          orElse: () => _fallbackCategory(),
         );
         return _AnimatedGridItem(
           index: i,

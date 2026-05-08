@@ -25,9 +25,12 @@ class TransactionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ext = context.appTheme;
-    final amountColor =
-        transaction.isIncome ? ext.incomeColor : ext.expenseColor;
+    final amountColor = transaction.isIncome
+        ? ext.incomeColor
+        : ext.expenseColor;
     final sign = transaction.isIncome ? '+' : '-';
+    final isAdjustment =
+        transaction.entryType == TransactionEntryType.adjustment;
     final cat = category;
 
     final tile = ListTile(
@@ -38,18 +41,24 @@ class TransactionTile extends StatelessWidget {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: (cat?.color ?? Colors.grey).withAlpha(30),
+            color:
+                (isAdjustment ? AppColors.warning : (cat?.color ?? Colors.grey))
+                    .withAlpha(30),
             shape: BoxShape.circle,
           ),
           child: Icon(
-            cat?.icon ?? Icons.category_rounded,
-            color: cat?.color ?? Colors.grey,
+            isAdjustment
+                ? Icons.tune_rounded
+                : (cat?.icon ?? Icons.category_rounded),
+            color: isAdjustment
+                ? AppColors.warning
+                : (cat?.color ?? Colors.grey),
             size: 22,
           ),
         ),
       ),
       title: Text(
-        cat?.name ?? 'Unknown',
+        isAdjustment ? 'Balance Adjustment' : (cat?.name ?? 'Unknown'),
         style: Theme.of(context).textTheme.titleSmall,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
@@ -60,14 +69,14 @@ class TransactionTile extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             )
           : Text(
               AppFormatters.shortDate(transaction.date),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
       trailing: Semantics(
         label:
@@ -75,9 +84,9 @@ class TransactionTile extends StatelessWidget {
         child: Text(
           '$sign${AppFormatters.currency(transaction.amount, currencySymbol)}',
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: amountColor,
-                fontWeight: FontWeight.w700,
-              ),
+            color: amountColor,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );
@@ -98,8 +107,7 @@ class TransactionTile extends StatelessWidget {
           context: context,
           builder: (_) => AlertDialog(
             title: const Text('Delete transaction?'),
-            content:
-                const Text('This action cannot be undone.'),
+            content: const Text('This action cannot be undone.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -108,7 +116,8 @@ class TransactionTile extends StatelessWidget {
               FilledButton(
                 onPressed: () => Navigator.pop(context, true),
                 style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.expense),
+                  backgroundColor: AppColors.expense,
+                ),
                 child: const Text('Delete'),
               ),
             ],

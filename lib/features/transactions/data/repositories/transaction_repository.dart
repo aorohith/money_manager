@@ -13,6 +13,7 @@ abstract class TransactionRepository {
   Stream<List<TransactionModel>> watchAll({
     bool? isIncome,
     int? categoryId,
+    int? accountId,
     DateTime? from,
     DateTime? to,
     int limit = 100,
@@ -23,6 +24,7 @@ abstract class TransactionRepository {
   Future<List<TransactionModel>> getAll({
     bool? isIncome,
     int? categoryId,
+    int? accountId,
     DateTime? from,
     DateTime? to,
     String? searchNote,
@@ -35,6 +37,7 @@ abstract class TransactionRepository {
   Future<int> getCount({
     bool? isIncome,
     int? categoryId,
+    int? accountId,
     DateTime? from,
     DateTime? to,
   });
@@ -81,6 +84,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
   Stream<List<TransactionModel>> watchAll({
     bool? isIncome,
     int? categoryId,
+    int? accountId,
     DateTime? from,
     DateTime? to,
     int limit = 100,
@@ -89,8 +93,8 @@ class TransactionRepositoryImpl implements TransactionRepository {
         .filter()
         .isDeletedEqualTo(false)
         .optional(isIncome != null, (q) => q.isIncomeEqualTo(isIncome!))
-        .optional(
-            categoryId != null, (q) => q.categoryIdEqualTo(categoryId!))
+        .optional(categoryId != null, (q) => q.categoryIdEqualTo(categoryId!))
+        .optional(accountId != null, (q) => q.accountIdEqualTo(accountId!))
         .optional(from != null, (q) => q.dateGreaterThan(from!))
         .optional(to != null, (q) => q.dateLessThan(to!))
         .sortByDateDesc()
@@ -102,6 +106,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
   Future<List<TransactionModel>> getAll({
     bool? isIncome,
     int? categoryId,
+    int? accountId,
     DateTime? from,
     DateTime? to,
     String? searchNote,
@@ -112,13 +117,14 @@ class TransactionRepositoryImpl implements TransactionRepository {
         .filter()
         .isDeletedEqualTo(false)
         .optional(isIncome != null, (q) => q.isIncomeEqualTo(isIncome!))
-        .optional(
-            categoryId != null, (q) => q.categoryIdEqualTo(categoryId!))
+        .optional(categoryId != null, (q) => q.categoryIdEqualTo(categoryId!))
+        .optional(accountId != null, (q) => q.accountIdEqualTo(accountId!))
         .optional(from != null, (q) => q.dateGreaterThan(from!))
         .optional(to != null, (q) => q.dateLessThan(to!))
         .optional(
-            searchNote != null && searchNote.isNotEmpty,
-            (q) => q.noteContains(searchNote!, caseSensitive: false))
+          searchNote != null && searchNote.isNotEmpty,
+          (q) => q.noteContains(searchNote!, caseSensitive: false),
+        )
         .sortByDateDesc();
 
     if (limit != null) {
@@ -131,6 +137,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
   Future<int> getCount({
     bool? isIncome,
     int? categoryId,
+    int? accountId,
     DateTime? from,
     DateTime? to,
   }) {
@@ -138,16 +145,15 @@ class TransactionRepositoryImpl implements TransactionRepository {
         .filter()
         .isDeletedEqualTo(false)
         .optional(isIncome != null, (q) => q.isIncomeEqualTo(isIncome!))
-        .optional(
-            categoryId != null, (q) => q.categoryIdEqualTo(categoryId!))
+        .optional(categoryId != null, (q) => q.categoryIdEqualTo(categoryId!))
+        .optional(accountId != null, (q) => q.accountIdEqualTo(accountId!))
         .optional(from != null, (q) => q.dateGreaterThan(from!))
         .optional(to != null, (q) => q.dateLessThan(to!))
         .count();
   }
 
   @override
-  Future<TransactionModel?> getById(int id) =>
-      _isar.transactionModels.get(id);
+  Future<TransactionModel?> getById(int id) => _isar.transactionModels.get(id);
 
   @override
   Future<int> add(TransactionModel transaction) async {
@@ -162,8 +168,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<void> update(TransactionModel transaction) async {
     transaction.updatedAt = DateTime.now();
-    await _isar.writeTxn(
-        () async => _isar.transactionModels.put(transaction));
+    await _isar.writeTxn(() async => _isar.transactionModels.put(transaction));
   }
 
   @override
@@ -208,10 +213,12 @@ class TransactionRepositoryImpl implements TransactionRepository {
         .isDeletedEqualTo(false)
         .accountIdEqualTo(accountId)
         .watch(fireImmediately: true)
-        .map((txs) => txs.fold<double>(
-              0.0,
-              (sum, t) => t.isIncome ? sum + t.amount : sum - t.amount,
-            ));
+        .map(
+          (txs) => txs.fold<double>(
+            0.0,
+            (sum, t) => t.isIncome ? sum + t.amount : sum - t.amount,
+          ),
+        );
   }
 
   @override

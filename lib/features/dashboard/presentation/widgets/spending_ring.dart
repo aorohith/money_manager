@@ -46,14 +46,15 @@ class _SpendingRingState extends ConsumerState<SpendingRing>
     final categories = data.categories;
     final total = data.totalExpense;
 
-    // Build segments sorted by value desc
+    // Build segments sorted by value desc.
+    // Filter to entries that have a matching category before mapping, so we
+    // never call `.firstWhere` on an empty list (which throws "Bad state:
+    // No element" and crashes the widget).
     final segments = summary.entries
-        .where((e) => e.value > 0)
+        .where((e) => e.value > 0 && categories.any((c) => c.id == e.key))
         .map((e) {
-          final cat = categories.firstWhere(
-            (c) => c.id == e.key,
-            orElse: () => categories.first,
-          );
+          // Safe: category existence is guaranteed by the .where() above.
+          final cat = categories.firstWhere((c) => c.id == e.key);
           return _Segment(
             label: cat.name,
             value: e.value,

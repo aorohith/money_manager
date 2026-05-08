@@ -37,34 +37,40 @@ const TransactionModelSchema = CollectionSchema(
       name: r'date',
       type: IsarType.dateTime,
     ),
-    r'isDeleted': PropertySchema(
+    r'entryType': PropertySchema(
       id: 4,
+      name: r'entryType',
+      type: IsarType.byte,
+      enumMap: _TransactionModelentryTypeEnumValueMap,
+    ),
+    r'isDeleted': PropertySchema(
+      id: 5,
       name: r'isDeleted',
       type: IsarType.bool,
     ),
     r'isIncome': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'isIncome',
       type: IsarType.bool,
     ),
     r'note': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'note',
       type: IsarType.string,
     ),
     r'recurrence': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'recurrence',
       type: IsarType.byte,
       enumMap: _TransactionModelrecurrenceEnumValueMap,
     ),
     r'updatedAt': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
     r'userId': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'userId',
       type: IsarType.string,
     )
@@ -193,12 +199,13 @@ void _transactionModelSerialize(
   writer.writeDouble(offsets[1], object.amount);
   writer.writeLong(offsets[2], object.categoryId);
   writer.writeDateTime(offsets[3], object.date);
-  writer.writeBool(offsets[4], object.isDeleted);
-  writer.writeBool(offsets[5], object.isIncome);
-  writer.writeString(offsets[6], object.note);
-  writer.writeByte(offsets[7], object.recurrence.index);
-  writer.writeDateTime(offsets[8], object.updatedAt);
-  writer.writeString(offsets[9], object.userId);
+  writer.writeByte(offsets[4], object.entryType.index);
+  writer.writeBool(offsets[5], object.isDeleted);
+  writer.writeBool(offsets[6], object.isIncome);
+  writer.writeString(offsets[7], object.note);
+  writer.writeByte(offsets[8], object.recurrence.index);
+  writer.writeDateTime(offsets[9], object.updatedAt);
+  writer.writeString(offsets[10], object.userId);
 }
 
 TransactionModel _transactionModelDeserialize(
@@ -212,16 +219,19 @@ TransactionModel _transactionModelDeserialize(
     amount: reader.readDouble(offsets[1]),
     categoryId: reader.readLong(offsets[2]),
     date: reader.readDateTime(offsets[3]),
-    isDeleted: reader.readBoolOrNull(offsets[4]) ?? false,
-    isIncome: reader.readBool(offsets[5]),
-    note: reader.readStringOrNull(offsets[6]),
+    entryType: _TransactionModelentryTypeValueEnumMap[
+            reader.readByteOrNull(offsets[4])] ??
+        TransactionEntryType.regular,
+    isDeleted: reader.readBoolOrNull(offsets[5]) ?? false,
+    isIncome: reader.readBool(offsets[6]),
+    note: reader.readStringOrNull(offsets[7]),
     recurrence: _TransactionModelrecurrenceValueEnumMap[
-            reader.readByteOrNull(offsets[7])] ??
+            reader.readByteOrNull(offsets[8])] ??
         RecurrenceType.none,
   );
   object.id = id;
-  object.updatedAt = reader.readDateTime(offsets[8]);
-  object.userId = reader.readStringOrNull(offsets[9]);
+  object.updatedAt = reader.readDateTime(offsets[9]);
+  object.userId = reader.readStringOrNull(offsets[10]);
   return object;
 }
 
@@ -241,24 +251,36 @@ P _transactionModelDeserializeProp<P>(
     case 3:
       return (reader.readDateTime(offset)) as P;
     case 4:
-      return (reader.readBoolOrNull(offset) ?? false) as P;
+      return (_TransactionModelentryTypeValueEnumMap[
+              reader.readByteOrNull(offset)] ??
+          TransactionEntryType.regular) as P;
     case 5:
-      return (reader.readBool(offset)) as P;
+      return (reader.readBoolOrNull(offset) ?? false) as P;
     case 6:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 7:
+      return (reader.readStringOrNull(offset)) as P;
+    case 8:
       return (_TransactionModelrecurrenceValueEnumMap[
               reader.readByteOrNull(offset)] ??
           RecurrenceType.none) as P;
-    case 8:
-      return (reader.readDateTime(offset)) as P;
     case 9:
+      return (reader.readDateTime(offset)) as P;
+    case 10:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
 }
 
+const _TransactionModelentryTypeEnumValueMap = {
+  'regular': 0,
+  'adjustment': 1,
+};
+const _TransactionModelentryTypeValueEnumMap = {
+  0: TransactionEntryType.regular,
+  1: TransactionEntryType.adjustment,
+};
 const _TransactionModelrecurrenceEnumValueMap = {
   'none': 0,
   'daily': 1,
@@ -1162,6 +1184,62 @@ extension TransactionModelQueryFilter
   }
 
   QueryBuilder<TransactionModel, TransactionModel, QAfterFilterCondition>
+      entryTypeEqualTo(TransactionEntryType value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'entryType',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterFilterCondition>
+      entryTypeGreaterThan(
+    TransactionEntryType value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'entryType',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterFilterCondition>
+      entryTypeLessThan(
+    TransactionEntryType value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'entryType',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterFilterCondition>
+      entryTypeBetween(
+    TransactionEntryType lower,
+    TransactionEntryType upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'entryType',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterFilterCondition>
       idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -1722,6 +1800,20 @@ extension TransactionModelQuerySortBy
   }
 
   QueryBuilder<TransactionModel, TransactionModel, QAfterSortBy>
+      sortByEntryType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'entryType', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterSortBy>
+      sortByEntryTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'entryType', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterSortBy>
       sortByIsDeleted() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isDeleted', Sort.asc);
@@ -1862,6 +1954,20 @@ extension TransactionModelQuerySortThenBy
     });
   }
 
+  QueryBuilder<TransactionModel, TransactionModel, QAfterSortBy>
+      thenByEntryType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'entryType', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterSortBy>
+      thenByEntryTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'entryType', Sort.desc);
+    });
+  }
+
   QueryBuilder<TransactionModel, TransactionModel, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -1989,6 +2095,13 @@ extension TransactionModelQueryWhereDistinct
   }
 
   QueryBuilder<TransactionModel, TransactionModel, QDistinct>
+      distinctByEntryType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'entryType');
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QDistinct>
       distinctByIsDeleted() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isDeleted');
@@ -2060,6 +2173,13 @@ extension TransactionModelQueryProperty
   QueryBuilder<TransactionModel, DateTime, QQueryOperations> dateProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'date');
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionEntryType, QQueryOperations>
+      entryTypeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'entryType');
     });
   }
 

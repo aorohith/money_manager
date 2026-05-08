@@ -15,8 +15,7 @@ import '../usecases/transaction_usecases.dart';
 
 // ── Repositories ─────────────────────────────────────────────────────────────
 
-final transactionRepositoryProvider =
-    Provider<TransactionRepository>((ref) {
+final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
   final isar = ref.read(isarProvider);
   return TransactionRepositoryImpl(isar);
 });
@@ -33,18 +32,17 @@ final accountRepositoryProvider = Provider<AccountRepository>((ref) {
 
 // ── Use cases ─────────────────────────────────────────────────────────────────
 
-final addTransactionUseCaseProvider =
-    Provider<AddTransactionUseCase>((ref) {
+final addTransactionUseCaseProvider = Provider<AddTransactionUseCase>((ref) {
   return AddTransactionUseCase(ref.read(transactionRepositoryProvider));
 });
 
-final editTransactionUseCaseProvider =
-    Provider<EditTransactionUseCase>((ref) {
+final editTransactionUseCaseProvider = Provider<EditTransactionUseCase>((ref) {
   return EditTransactionUseCase(ref.read(transactionRepositoryProvider));
 });
 
-final deleteTransactionUseCaseProvider =
-    Provider<DeleteTransactionUseCase>((ref) {
+final deleteTransactionUseCaseProvider = Provider<DeleteTransactionUseCase>((
+  ref,
+) {
   return DeleteTransactionUseCase(ref.read(transactionRepositoryProvider));
 });
 
@@ -76,8 +74,7 @@ class TransactionFilter {
   }) {
     return TransactionFilter(
       isIncome: clearIsIncome ? null : (isIncome ?? this.isIncome),
-      categoryId:
-          clearCategoryId ? null : (categoryId ?? this.categoryId),
+      categoryId: clearCategoryId ? null : (categoryId ?? this.categoryId),
       from: from ?? this.from,
       to: to ?? this.to,
       searchQuery: searchQuery ?? this.searchQuery,
@@ -85,14 +82,16 @@ class TransactionFilter {
   }
 }
 
-final transactionFilterProvider =
-    StateProvider<TransactionFilter>((_) => const TransactionFilter());
+final transactionFilterProvider = StateProvider<TransactionFilter>(
+  (_) => const TransactionFilter(),
+);
 
 // ── Transaction list (AsyncNotifier) ─────────────────────────────────────────
 
 final transactionListProvider =
     AsyncNotifierProvider<TransactionListNotifier, List<TransactionModel>>(
-        TransactionListNotifier.new);
+      TransactionListNotifier.new,
+    );
 
 /// Reactive notifier that streams the 100 most-recent transactions matching
 /// [TransactionFilter].
@@ -106,8 +105,7 @@ final transactionListProvider =
 /// - Text search is applied client-side for partial-word matching.
 /// - For full history beyond 100 records use [TransactionRepository.getAll]
 ///   with [limit] + [offset] directly.
-class TransactionListNotifier
-    extends AsyncNotifier<List<TransactionModel>> {
+class TransactionListNotifier extends AsyncNotifier<List<TransactionModel>> {
   StreamSubscription<List<TransactionModel>>? _sub;
 
   @override
@@ -131,12 +129,14 @@ class TransactionListNotifier
           final filtered = filter.searchQuery.isEmpty
               ? txs
               : txs
-                  .where((t) =>
-                      t.note
-                          ?.toLowerCase()
-                          .contains(filter.searchQuery.toLowerCase()) ??
-                      false)
-                  .toList();
+                    .where(
+                      (t) =>
+                          t.note?.toLowerCase().contains(
+                            filter.searchQuery.toLowerCase(),
+                          ) ??
+                          false,
+                    )
+                    .toList();
 
           if (!completer.isCompleted) {
             completer.complete(filtered);
@@ -152,21 +152,22 @@ class TransactionListNotifier
 
 // ── Categories ────────────────────────────────────────────────────────────────
 
-final categoriesProvider =
-    StreamProvider<List<CategoryModel>>((ref) {
+final categoriesProvider = StreamProvider<List<CategoryModel>>((ref) {
   final repo = ref.read(categoryRepositoryProvider);
   return repo.watchAll();
 });
 
-final expenseCategoriesProvider =
-    Provider<AsyncValue<List<CategoryModel>>>((ref) {
+final expenseCategoriesProvider = Provider<AsyncValue<List<CategoryModel>>>((
+  ref,
+) {
   return ref
       .watch(categoriesProvider)
       .whenData((cats) => cats.where((c) => !c.isIncome).toList());
 });
 
-final incomeCategoriesProvider =
-    Provider<AsyncValue<List<CategoryModel>>>((ref) {
+final incomeCategoriesProvider = Provider<AsyncValue<List<CategoryModel>>>((
+  ref,
+) {
   return ref
       .watch(categoriesProvider)
       .whenData((cats) => cats.where((c) => c.isIncome).toList());
@@ -209,18 +210,143 @@ final accountsProvider = StreamProvider<List<AccountModel>>((ref) async* {
 /// Balance = [AccountModel.initialBalance] + net transaction delta.
 /// Uses a stream so the UI updates immediately when any transaction for
 /// this account is added, edited, or deleted.
-final accountBalanceProvider =
-    StreamProvider.autoDispose.family<double, AccountModel>((ref, account) {
-  final repo = ref.read(transactionRepositoryProvider);
-  return repo
-      .watchTransactionDeltaForAccount(account.id)
-      .map((delta) => account.initialBalance + delta);
-});
+final accountBalanceProvider = StreamProvider.autoDispose
+    .family<double, AccountModel>((ref, account) {
+      final repo = ref.read(transactionRepositoryProvider);
+      return repo
+          .watchTransactionDeltaForAccount(account.id)
+          .map((delta) => account.initialBalance + delta);
+    });
 
 /// One-shot fetch of an account's computed balance (for non-reactive contexts).
-final accountBalanceFutureProvider =
-    FutureProvider.autoDispose.family<double, AccountModel>((ref, account) async {
-  final repo = ref.read(transactionRepositoryProvider);
-  final delta = await repo.getTransactionDeltaForAccount(account.id);
-  return account.initialBalance + delta;
-});
+final accountBalanceFutureProvider = FutureProvider.autoDispose
+    .family<double, AccountModel>((ref, account) async {
+      final repo = ref.read(transactionRepositoryProvider);
+      final delta = await repo.getTransactionDeltaForAccount(account.id);
+      return account.initialBalance + delta;
+    });
+
+final accountTransactionsProvider = StreamProvider.autoDispose
+    .family<List<TransactionModel>, int>((ref, accountId) {
+      final repo = ref.read(transactionRepositoryProvider);
+      return repo.watchAll(accountId: accountId, limit: 1000);
+    });
+
+class AccountBalanceSnapshot {
+  const AccountBalanceSnapshot({
+    required this.calculatedBalance,
+    required this.actualBalance,
+  });
+
+  final double calculatedBalance;
+  final double actualBalance;
+
+  double get discrepancy => actualBalance - calculatedBalance;
+  bool get hasDiscrepancy => discrepancy.abs() >= 0.01;
+}
+
+final accountBalanceSnapshotProvider = StreamProvider.autoDispose
+    .family<AccountBalanceSnapshot, AccountModel>((ref, account) {
+      final repo = ref.read(transactionRepositoryProvider);
+      return repo.watchTransactionDeltaForAccount(account.id).map((delta) {
+        final calculated = account.initialBalance + delta;
+        final actual = account.actualBalance ?? calculated;
+        return AccountBalanceSnapshot(
+          calculatedBalance: calculated,
+          actualBalance: actual,
+        );
+      });
+    });
+
+class ReconciliationItem {
+  const ReconciliationItem({
+    required this.account,
+    required this.calculatedBalance,
+    required this.actualBalance,
+  });
+
+  final AccountModel account;
+  final double calculatedBalance;
+  final double actualBalance;
+
+  double get discrepancy => actualBalance - calculatedBalance;
+}
+
+class ReconciliationState {
+  const ReconciliationState({required this.pending, required this.history});
+
+  final List<ReconciliationItem> pending;
+  final List<ReconciliationItem> history;
+}
+
+final reconciliationStateProvider =
+    StreamProvider.autoDispose<ReconciliationState>((ref) {
+      final accountRepo = ref.read(accountRepositoryProvider);
+      final repo = ref.read(transactionRepositoryProvider);
+      return accountRepo.watchAll().asyncMap((accounts) async {
+        final pending = <ReconciliationItem>[];
+        final history = <ReconciliationItem>[];
+
+        for (final account in accounts) {
+          final delta = await repo.getTransactionDeltaForAccount(account.id);
+          final calculated = account.initialBalance + delta;
+          final actual = account.actualBalance ?? calculated;
+          final item = ReconciliationItem(
+            account: account,
+            calculatedBalance: calculated,
+            actualBalance: actual,
+          );
+          if ((actual - calculated).abs() >= 0.01) {
+            pending.add(item);
+          } else {
+            history.add(item);
+          }
+        }
+
+        return ReconciliationState(pending: pending, history: history);
+      });
+    });
+
+final accountReconciliationActionsProvider =
+    Provider<AccountReconciliationActions>((ref) {
+      return AccountReconciliationActions(ref);
+    });
+
+class AccountReconciliationActions {
+  AccountReconciliationActions(this._ref);
+
+  final Ref _ref;
+
+  Future<void> setActualBalance({
+    required AccountModel account,
+    required double targetBalance,
+    String? note,
+  }) async {
+    final repo = _ref.read(transactionRepositoryProvider);
+    final accountRepo = _ref.read(accountRepositoryProvider);
+    final calculated = await _ref.read(
+      accountBalanceFutureProvider(account).future,
+    );
+    final gap = targetBalance - calculated;
+
+    if (gap.abs() < 0.01) {
+      account.actualBalance = targetBalance;
+      await accountRepo.update(account);
+      return;
+    }
+
+    final tx = TransactionModel(
+      amount: gap.abs(),
+      categoryId: 0,
+      accountId: account.id,
+      date: DateTime.now(),
+      isIncome: gap > 0,
+      note: note?.trim().isEmpty ?? true ? 'Balance adjustment' : note!.trim(),
+      entryType: TransactionEntryType.adjustment,
+    );
+    await repo.add(tx);
+
+    account.actualBalance = targetBalance;
+    await accountRepo.update(account);
+  }
+}

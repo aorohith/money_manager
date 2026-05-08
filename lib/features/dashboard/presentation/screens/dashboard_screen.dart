@@ -2,13 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/constants.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../../auth/providers/auth_provider.dart';
+import '../../../budgets/domain/providers/budget_providers.dart';
+import '../../../goals/data/models/goal_model.dart';
+import '../../../goals/domain/providers/goal_providers.dart';
+import '../../../insights/domain/providers/insights_providers.dart';
+import '../../../sms/domain/providers/sms_providers.dart';
 import '../../../transactions/presentation/widgets/add_transaction_sheet.dart';
 import '../../../transactions/presentation/widgets/transaction_tile.dart';
-import '../../../budgets/domain/providers/budget_providers.dart';
 import '../../domain/providers/dashboard_providers.dart';
 import '../widgets/balance_card.dart';
 import '../widgets/spending_ring.dart';
@@ -77,9 +83,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   const SizedBox(height: AppSpacing.lg),
                   _QuickStatsRow(),
                   const SizedBox(height: AppSpacing.lg),
+                  _SmsDetectionBanner(),
+                  const SizedBox(height: AppSpacing.lg),
+                  _InsightsSummaryCard(),
+                  const SizedBox(height: AppSpacing.lg),
                   const SpendingRing(),
                   const SizedBox(height: AppSpacing.lg),
                   _BudgetHealthBanner(),
+                  const SizedBox(height: AppSpacing.lg),
+                  _GoalsSection(),
                   const SizedBox(height: AppSpacing.lg),
                   _RecentTransactionsSection(),
                   const SizedBox(height: 100),
@@ -201,7 +213,7 @@ class _NotificationButton extends StatelessWidget {
               ? AppColors.textSecondaryDark
               : AppColors.textSecondary,
         ),
-        onPressed: () {},
+        onPressed: () => context.go(AppRoutes.insights),
         tooltip: 'Notifications',
         style: IconButton.styleFrom(
           backgroundColor: isDark
@@ -429,7 +441,8 @@ class _RecentTransactionsSection extends ConsumerWidget {
                     ),
               ),
               TextButton(
-                onPressed: () {},
+                // Navigate to the full Transactions screen.
+                onPressed: () => context.go(AppRoutes.transactions),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.brand,
                   padding: const EdgeInsets.symmetric(
@@ -558,6 +571,468 @@ class _StaggeredTileState extends State<_StaggeredTile>
     return FadeTransition(
       opacity: _fade,
       child: SlideTransition(position: _slide, child: widget.child),
+    );
+  }
+}
+
+// ── SMS Detection Banner ──────────────────────────────────────────────────────
+
+class _SmsDetectionBanner extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settingsAsync = ref.watch(smsSettingsProvider);
+    final pendingCount = ref.watch(smsPendingCountProvider);
+    final permissionAsync = ref.watch(smsPermissionProvider);
+
+    // Hide banner entirely when the feature is disabled in settings
+    final smsEnabled = settingsAsync.valueOrNull?.enabled ?? true;
+    if (!smsEnabled) return const SizedBox.shrink();
+
+    // Don't show the banner if we have permission and nothing pending
+    final hasPermission = permissionAsync.valueOrNull ?? false;
+    if (hasPermission && pendingCount == 0) return const SizedBox.shrink();
+
+    final isSetupCta = !hasPermission;
+    final accent =
+        isSetupCta ? AppColors.brand : AppColors.income;
+    final icon = isSetupCta
+        ? Icons.sms_outlined
+        : Icons.mark_email_unread_outlined;
+    final title = isSetupCta
+        ? 'Enable auto expense detection'
+        : '$pendingCount new expense${pendingCount == 1 ? '' : 's'} detected';
+    final subtitle = isSetupCta
+        ? 'Auto-log payments from bank notifications'
+        : 'Tap to review and save';
+
+    return Padding(
+      padding:
+          const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+      child: GestureDetector(
+        onTap: () => context.push(
+            isSetupCta ? AppRoutes.smsOnboarding : AppRoutes.smsInbox),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm + 4,
+          ),
+          decoration: BoxDecoration(
+            color: accent.withAlpha(12),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            border: Border.all(color: accent.withAlpha(60)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: accent.withAlpha(25),
+                  borderRadius:
+                      BorderRadius.circular(AppSpacing.radiusSm),
+                ),
+                child: Icon(icon, size: 18, color: accent),
+              ),
+              const SizedBox(width: AppSpacing.sm + 2),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelMedium
+                          ?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: accent,
+                          ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelSmall
+                          ?.copyWith(
+                            color: accent.withAlpha(180),
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              if (!isSetupCta)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: accent,
+                    borderRadius:
+                        BorderRadius.circular(AppSpacing.radiusFull),
+                  ),
+                  child: Text(
+                    '$pendingCount',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
+                  ),
+                )
+              else
+                Icon(Icons.chevron_right_rounded,
+                    size: 18, color: accent),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Insights Summary Card ─────────────────────────────────────────────────────
+
+class _InsightsSummaryCard extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final insightsAsync = ref.watch(insightsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+      child: GestureDetector(
+        onTap: () => context.go(AppRoutes.insights),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm + 4,
+          ),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : AppColors.surface,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            border: Border.all(
+              color: isDark ? AppColors.outlineDark : AppColors.outline,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.brand.withAlpha(20),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                ),
+                child: const Icon(Icons.insights_rounded,
+                    size: 18, color: AppColors.brand),
+              ),
+              const SizedBox(width: AppSpacing.sm + 2),
+              Expanded(
+                child: insightsAsync.when(
+                  loading: () => Text(
+                    'Insights',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimary,
+                        ),
+                  ),
+                  error: (_, __) => Text(
+                    'View Insights',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimary,
+                        ),
+                  ),
+                  data: (d) => Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Insights',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? AppColors.textPrimaryDark
+                                      : AppColors.textPrimary,
+                                ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Savings ${d.savingsRate.toStringAsFixed(0)}%  '
+                            '${d.spendingUp ? '↑' : '↓'} ${d.spendingChangePercent.abs().toStringAsFixed(0)}% vs last month',
+                            style:
+                                Theme.of(context).textTheme.labelSmall?.copyWith(
+                                      color: isDark
+                                          ? AppColors.textSecondaryDark
+                                          : AppColors.textSecondary,
+                                    ),
+                          ),
+                        ],
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Goals Section ─────────────────────────────────────────────────────────────
+
+class _GoalsSection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final goalsAsync = ref.watch(goalListProvider);
+    final currencySymbol =
+        ref.watch(currencySymbolProvider).valueOrNull ?? '\$';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenPadding),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Goals',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
+                      letterSpacing: -0.2,
+                    ),
+              ),
+              TextButton(
+                onPressed: () => context.go(AppRoutes.goals),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.brand,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'See all',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: AppColors.brand,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(width: 2),
+                    const Icon(Icons.chevron_right_rounded,
+                        size: 16, color: AppColors.brand),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        goalsAsync.when(
+          loading: () => Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenPadding),
+            child: const ShimmerBox(
+                width: double.infinity, height: 68, borderRadius: 14),
+          ),
+          error: (_, __) => const SizedBox.shrink(),
+          data: (goals) {
+            final active =
+                goals.where((g) => !g.isCompleted).take(3).toList();
+            if (active.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.screenPadding),
+                child: GestureDetector(
+                  onTap: () => context.go(AppRoutes.goals),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color:
+                          isDark ? AppColors.surfaceDark : AppColors.surface,
+                      borderRadius:
+                          BorderRadius.circular(AppSpacing.radiusMd),
+                      border: Border.all(
+                        color: isDark
+                            ? AppColors.outlineDark
+                            : AppColors.outline,
+                        style: BorderStyle.solid,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.flag_outlined,
+                            size: 16,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondary),
+                        const SizedBox(width: AppSpacing.xs),
+                        Text(
+                          'Set your first goal',
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelMedium
+                              ?.copyWith(
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondary,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+            return Column(
+              children: active
+                  .map((g) => _GoalCard(
+                      goal: g,
+                      currencySymbol: currencySymbol,
+                      isDark: isDark))
+                  .toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _GoalCard extends StatelessWidget {
+  const _GoalCard({
+    required this.goal,
+    required this.currencySymbol,
+    required this.isDark,
+  });
+
+  final GoalModel goal;
+  final String currencySymbol;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = goal.color;
+    final pct = goal.progress;
+
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: AppSpacing.screenPadding,
+        right: AppSpacing.screenPadding,
+        bottom: AppSpacing.sm,
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm + 4,
+        ),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : AppColors.surface,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          border: Border.all(
+            color: isDark ? AppColors.outlineDark : AppColors.outline,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: accent.withAlpha(20),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+              ),
+              child: Icon(goal.icon, size: 18, color: accent),
+            ),
+            const SizedBox(width: AppSpacing.sm + 2),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          goal.name,
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimary,
+                              ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        '${(pct * 100).toStringAsFixed(0)}%',
+                        style:
+                            Theme.of(context).textTheme.labelMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: accent,
+                                ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius:
+                        BorderRadius.circular(AppSpacing.radiusFull),
+                    child: LinearProgressIndicator(
+                      value: pct,
+                      backgroundColor:
+                          isDark ? AppColors.outlineDark : AppColors.outline,
+                      valueColor: AlwaysStoppedAnimation(accent),
+                      minHeight: 5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$currencySymbol${goal.remaining.toStringAsFixed(0)} remaining',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondary,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

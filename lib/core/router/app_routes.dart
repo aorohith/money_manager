@@ -19,6 +19,7 @@ abstract final class AppRoutes {
   static const String smsSettings = '/sms/settings';
   static const String manageCategories = '/settings/categories';
   static const String manageAccounts = '/settings/accounts';
+  static const String reconciliation = '/settings/reconciliation';
   static const String analyticsCategory = '/analytics/category';
   static const String themeShowcase = '/dev/theme';
 }
@@ -46,6 +47,8 @@ abstract final class AppRouteNames {
   static const String smsSettings = 'sms-settings';
   static const String manageCategories = 'manage-categories';
   static const String manageAccounts = 'manage-accounts';
+  static const String accountDetail = 'account-detail';
+  static const String reconciliation = 'reconciliation';
   static const String analyticsCategory = 'analytics-category';
   static const String themeShowcase = 'theme-showcase';
 }

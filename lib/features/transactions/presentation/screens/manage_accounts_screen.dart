@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/constants.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../../auth/providers/auth_provider.dart';
@@ -31,8 +33,9 @@ class ManageAccountsScreen extends ConsumerWidget {
               delegate: SliverChildBuilderDelegate(
                 (_, __) => const Padding(
                   padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.screenPadding,
-                      vertical: AppSpacing.xs),
+                    horizontal: AppSpacing.screenPadding,
+                    vertical: AppSpacing.xs,
+                  ),
                   child: ShimmerLoader(
                     child: ShimmerBox(width: double.infinity, height: 72),
                   ),
@@ -88,10 +91,7 @@ class ManageAccountsScreen extends ConsumerWidget {
 }
 
 class _AccountTile extends ConsumerWidget {
-  const _AccountTile({
-    required this.account,
-    required this.currencySymbol,
-  });
+  const _AccountTile({required this.account, required this.currencySymbol});
 
   final AccountModel account;
   final String currencySymbol;
@@ -107,9 +107,11 @@ class _AccountTile extends ConsumerWidget {
       onDismissed: (_) async {
         await ref.read(accountRepositoryProvider).delete(account.id);
         if (context.mounted) {
-          showAppSnackBar(context,
-              message: '${account.name} deleted',
-              type: AppSnackBarType.success);
+          showAppSnackBar(
+            context,
+            message: '${account.name} deleted',
+            type: AppSnackBarType.success,
+          );
         }
       },
       background: Container(
@@ -131,21 +133,20 @@ class _AccountTile extends ConsumerWidget {
               color: account.color.withAlpha(30),
               shape: BoxShape.circle,
             ),
-            child:
-                Icon(account.icon, color: account.color, size: 22),
+            child: Icon(account.icon, color: account.color, size: 22),
           ),
-          title: Text(account.name,
-              style: Theme.of(context).textTheme.titleSmall),
+          title: Text(
+            account.name,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
           subtitle: balanceAsync.when(
             data: (balance) => Text(
               AppFormatters.currency(balance.abs(), currencySymbol) +
                   (balance < 0 ? ' (debt)' : ''),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: balance < 0
-                        ? AppColors.expense
-                        : AppColors.income,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: balance < 0 ? AppColors.expense : AppColors.income,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             loading: () => const SizedBox(
               height: 14,
@@ -160,23 +161,21 @@ class _AccountTile extends ConsumerWidget {
               if (account.isDefault)
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest,
-                    borderRadius:
-                        BorderRadius.circular(AppSpacing.radiusFull),
+                    horizontal: 8,
+                    vertical: 2,
                   ),
-                  child: Text('Default',
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelSmall
-                          ?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                          )),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+                  ),
+                  child: Text(
+                    'Default',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ),
               const SizedBox(width: AppSpacing.sm),
               const Icon(Icons.chevron_right_rounded, size: 18),
@@ -184,18 +183,21 @@ class _AccountTile extends ConsumerWidget {
           ),
           contentPadding: EdgeInsets.zero,
           onTap: () =>
+              context.push('${AppRoutes.manageAccounts}/${account.id}'),
+          onLongPress: () =>
               showAddEditAccountSheet(context, existing: account),
         ),
       ),
     );
   }
 
-  Future<bool?> _confirmDelete(
-      BuildContext context, AccountModel account) {
+  Future<bool?> _confirmDelete(BuildContext context, AccountModel account) {
     if (account.isDefault) {
-      showAppSnackBar(context,
-          message: 'Default accounts cannot be deleted',
-          type: AppSnackBarType.error);
+      showAppSnackBar(
+        context,
+        message: 'Default accounts cannot be deleted',
+        type: AppSnackBarType.error,
+      );
       return Future.value(false);
     }
     return showDialog<bool>(
@@ -203,7 +205,8 @@ class _AccountTile extends ConsumerWidget {
       builder: (_) => AlertDialog(
         title: const Text('Delete account?'),
         content: Text(
-            'Delete "${account.name}"? Transactions will keep their existing account reference.'),
+          'Delete "${account.name}"? Transactions will keep their existing account reference.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -211,8 +214,7 @@ class _AccountTile extends ConsumerWidget {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            style:
-                FilledButton.styleFrom(backgroundColor: AppColors.error),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('Delete'),
           ),
         ],

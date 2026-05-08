@@ -32,12 +32,38 @@ class _PinLockScreenState extends ConsumerState<PinLockScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _tryBiometricOnOpen();
+    unawaited(_initBiometricState());
+  }
+
+  Future<void> _initBiometricState() async {
+    final notifier = ref.read(authProvider.notifier);
+    final enabled = await notifier.isBiometricUnlockEnabled;
+    final hasBiometricHardware = await notifier.hasBiometrics;
+    final canUseBiometric = enabled && hasBiometricHardware;
+
+    if (!mounted) return;
+    setState(() => _showBiometric = canUseBiometric);
+
+    if (!canUseBiometric) return;
+    await _tryBiometricOnOpen();
   }
 
   Future<void> _tryBiometricOnOpen() async {
     final ok = await ref.read(authProvider.notifier).unlockWithBiometric();
-    if (!ok && mounted) setState(() => _showBiometric = true);
+    if (!ok && mounted) {
+      setState(() {
+        _error = 'Biometric unlock failed. Use your PIN.';
+      });
+    }
+  }
+
+  Future<void> _onBiometricTap() async {
+    final ok = await ref.read(authProvider.notifier).unlockWithBiometric();
+    if (!ok && mounted) {
+      setState(() {
+        _error = 'Biometric unlock failed. Use your PIN.';
+      });
+    }
   }
 
   void _onDigit(String d) {
@@ -150,9 +176,7 @@ class _PinLockScreenState extends ConsumerState<PinLockScreen>
                           child: InkWell(
                             borderRadius: BorderRadius.circular(
                                 AppSpacing.radiusFull),
-                            onTap: () => ref
-                                .read(authProvider.notifier)
-                                .unlockWithBiometric(),
+                            onTap: _onBiometricTap,
                             child: const Center(
                               child: Icon(Icons.fingerprint_rounded, size: 32),
                             ),
