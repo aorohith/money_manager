@@ -107,5 +107,12 @@
   "@deleteTransactionMessage": { "description": "Confirmation dialog message for deleting a transaction" },
 
   "errorGeneric": "Something went wrong. Please try again.",
-  "@errorGeneric": { "description": "Generic error message" }
+  "@errorGeneric": { "description": "Generic error message" },
+
+  "importData": "Import data",
+  "@importData": { "description": "Settings tile and import screen title" },
+  "importPreview": "Import preview",
+  "@importPreview": { "description": "Import preview screen title" },
+  "importSummary": "Import summary",
+  "@importSummary": { "description": "Import summary screen title" }
 }

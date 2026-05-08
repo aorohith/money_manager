@@ -11,6 +11,7 @@ import '../../../auth/providers/auth_provider.dart';
 import '../../../transactions/domain/providers/transaction_providers.dart';
 import '../../data/export_service.dart';
 import '../../domain/providers/settings_providers.dart';
+import '../widgets/biometric_tile.dart';
 import '../widgets/change_currency_sheet.dart';
 import '../widgets/change_pin_sheet.dart';
 import '../widgets/edit_profile_sheet.dart';
@@ -53,7 +54,7 @@ class SettingsScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.sm),
                 _ChangePinTile(),
                 const SizedBox(height: AppSpacing.sm),
-                _BiometricTile(),
+                const BiometricTile(),
                 const SizedBox(height: AppSpacing.lg),
 
                 // Manage
@@ -110,6 +111,17 @@ class SettingsScreen extends ConsumerWidget {
 
                 // Data
                 _SectionHeader('Data'),
+                const SizedBox(height: AppSpacing.sm),
+                AppCard(
+                  onTap: () => context.push(AppRoutes.importData),
+                  child: const ListTile(
+                    leading: Icon(Icons.upload_file_rounded),
+                    title: Text('Import data'),
+                    subtitle: Text('Import transactions from Excel or PDF'),
+                    trailing: Icon(Icons.chevron_right_rounded, size: 18),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 _ExportCsvTile(),
                 const SizedBox(height: AppSpacing.sm),
@@ -279,73 +291,6 @@ class _ChangePinTile extends StatelessWidget {
         leading: Icon(Icons.lock_outline_rounded),
         title: Text('Change PIN'),
         trailing: Icon(Icons.chevron_right_rounded),
-        contentPadding: EdgeInsets.zero,
-      ),
-    );
-  }
-}
-
-class _BiometricTile extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final enabled = ref.watch(biometricEnabledProvider).valueOrNull ?? false;
-
-    return AppCard(
-      child: SwitchListTile(
-        secondary: const Icon(Icons.fingerprint_rounded),
-        title: const Text('Biometric Unlock'),
-        subtitle: const Text('Use fingerprint or face to unlock'),
-        value: enabled,
-        onChanged: (v) async {
-          final authNotifier = ref.read(authProvider.notifier);
-
-          if (!v) {
-            await ref.read(biometricEnabledProvider.notifier).toggle(false);
-            if (context.mounted) {
-              showAppSnackBar(
-                context,
-                message: 'Biometric unlock disabled',
-                type: AppSnackBarType.info,
-              );
-            }
-            return;
-          }
-
-          final hasBio = await authNotifier.hasBiometrics;
-          if (!hasBio) {
-            if (context.mounted) {
-              showAppSnackBar(
-                context,
-                message: 'Biometrics not available on this device',
-                type: AppSnackBarType.error,
-              );
-            }
-            return;
-          }
-
-          final verified = await authNotifier.confirmBiometricIdentity(
-            localizedReason: 'Confirm biometric to enable quick unlock',
-          );
-          if (!verified) {
-            if (context.mounted) {
-              showAppSnackBar(
-                context,
-                message: 'Biometric verification cancelled or failed',
-                type: AppSnackBarType.error,
-              );
-            }
-            return;
-          }
-
-          await ref.read(biometricEnabledProvider.notifier).toggle(true);
-          if (context.mounted) {
-            showAppSnackBar(
-              context,
-              message: 'Biometric unlock enabled',
-              type: AppSnackBarType.success,
-            );
-          }
-        },
         contentPadding: EdgeInsets.zero,
       ),
     );

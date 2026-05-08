@@ -11,6 +11,13 @@ class TransactionModel {
     required this.date,
     required this.isIncome,
     this.note,
+    this.tags = const [],
+    this.currencyCode,
+    this.originalAmount,
+    this.originalCurrencyCode,
+    this.fxRate,
+    this.transferGroupId,
+    this.importBatchId,
     this.recurrence = RecurrenceType.none,
     this.entryType = TransactionEntryType.regular,
     this.isDeleted = false,
@@ -35,6 +42,19 @@ class TransactionModel {
 
   String? note;
 
+  @Index(type: IndexType.value)
+  late List<String> tags;
+
+  /// Currency used by [amount]. Defaults to the app currency for manual rows.
+  String? currencyCode;
+
+  /// Original amount/currency from imported data when it differs from [amount].
+  double? originalAmount;
+  String? originalCurrencyCode;
+
+  /// Conversion rate from [originalAmount] into [amount], when available.
+  double? fxRate;
+
   @enumerated
   late RecurrenceType recurrence;
 
@@ -42,6 +62,14 @@ class TransactionModel {
   late TransactionEntryType entryType;
 
   late bool isDeleted;
+
+  /// Shared by the two rows that represent one account-to-account transfer.
+  @Index()
+  String? transferGroupId;
+
+  /// Import batch that created this row. Enables future import history/undo.
+  @Index()
+  String? importBatchId;
 
   /// Last write timestamp — used for future cloud sync conflict resolution.
   @Index()
@@ -53,4 +81,4 @@ class TransactionModel {
 
 enum RecurrenceType { none, daily, weekly, monthly, yearly }
 
-enum TransactionEntryType { regular, adjustment }
+enum TransactionEntryType { regular, adjustment, transfer }

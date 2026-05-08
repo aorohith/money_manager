@@ -375,6 +375,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Something went wrong. Please try again.'**
   String get errorGeneric;
+
+  /// Settings tile and import screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Import data'**
+  String get importData;
+
+  /// Import preview screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Import preview'**
+  String get importPreview;
+
+  /// Import summary screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Import summary'**
+  String get importSummary;
 }
 
 class _AppLocalizationsDelegate

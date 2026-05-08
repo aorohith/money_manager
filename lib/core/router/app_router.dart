@@ -22,6 +22,9 @@ import '../../features/budgets/presentation/screens/budgets_screen.dart';
 import '../../features/goals/presentation/screens/goals_screen.dart';
 import '../../features/goals/presentation/screens/goal_detail_screen.dart';
 import '../../features/insights/presentation/screens/insights_screen.dart';
+import '../../features/import/presentation/screens/import_preview_screen.dart';
+import '../../features/import/presentation/screens/import_screen.dart';
+import '../../features/import/presentation/screens/import_summary_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/sms/presentation/screens/sms_inbox_screen.dart';
 import '../../features/sms/presentation/screens/sms_onboarding_screen.dart';
@@ -207,6 +210,21 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: AppRoutes.reconciliation,
             name: AppRouteNames.reconciliation,
             builder: (_, __) => const ReconciliationScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.importData,
+            name: AppRouteNames.importData,
+            builder: (_, __) => const ImportScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.importPreview,
+            name: AppRouteNames.importPreview,
+            builder: (_, __) => const ImportPreviewScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.importSummary,
+            name: AppRouteNames.importSummary,
+            builder: (_, __) => const ImportSummaryScreen(),
           ),
           if (kDebugMode)
             GoRoute(

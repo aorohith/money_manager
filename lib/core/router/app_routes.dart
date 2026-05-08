@@ -20,6 +20,9 @@ abstract final class AppRoutes {
   static const String manageCategories = '/settings/categories';
   static const String manageAccounts = '/settings/accounts';
   static const String reconciliation = '/settings/reconciliation';
+  static const String importData = '/settings/import';
+  static const String importPreview = '/settings/import/preview';
+  static const String importSummary = '/settings/import/summary';
   static const String analyticsCategory = '/analytics/category';
   static const String themeShowcase = '/dev/theme';
 }
@@ -49,6 +52,9 @@ abstract final class AppRouteNames {
   static const String manageAccounts = 'manage-accounts';
   static const String accountDetail = 'account-detail';
   static const String reconciliation = 'reconciliation';
+  static const String importData = 'import-data';
+  static const String importPreview = 'import-preview';
+  static const String importSummary = 'import-summary';
   static const String analyticsCategory = 'analytics-category';
   static const String themeShowcase = 'theme-showcase';
 }

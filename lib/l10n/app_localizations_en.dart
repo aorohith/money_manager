@@ -153,4 +153,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorGeneric => 'Something went wrong. Please try again.';
+
+  @override
+  String get importData => 'Import data';
+
+  @override
+  String get importPreview => 'Import preview';
+
+  @override
+  String get importSummary => 'Import summary';
 }
