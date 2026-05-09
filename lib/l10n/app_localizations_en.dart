@@ -153,4 +153,85 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorGeneric => 'Something went wrong. Please try again.';
+
+  @override
+  String get importData => 'Import data';
+
+  @override
+  String get importPreview => 'Import preview';
+
+  @override
+  String get importSummary => 'Import summary';
+
+  @override
+  String importRowsAction(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.compact(
+      locale: localeName,
+    );
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Import $countString rows',
+      one: 'Import 1 row',
+      zero: 'No rows to import',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String transactionsCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.compact(
+      locale: localeName,
+    );
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString transactions',
+      one: '1 transaction',
+      zero: 'No transactions',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String categoriesCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.compact(
+      locale: localeName,
+    );
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString categories',
+      one: '1 category',
+      zero: 'No categories',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pinAttemptsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Incorrect PIN. $count attempts left.',
+      one: 'Incorrect PIN. 1 attempt left.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get exitAppTitle => 'Exit Money Manager?';
+
+  @override
+  String get exitAppMessage =>
+      'You\'ll be taken out of the app. Your data stays saved.';
+
+  @override
+  String get exit => 'Exit';
 }

@@ -107,5 +107,48 @@
   "@deleteTransactionMessage": { "description": "Confirmation dialog message for deleting a transaction" },
 
   "errorGeneric": "Something went wrong. Please try again.",
-  "@errorGeneric": { "description": "Generic error message" }
+  "@errorGeneric": { "description": "Generic error message" },
+
+  "importData": "Import data",
+  "@importData": { "description": "Settings tile and import screen title" },
+  "importPreview": "Import preview",
+  "@importPreview": { "description": "Import preview screen title" },
+  "importSummary": "Import summary",
+  "@importSummary": { "description": "Import summary screen title" },
+
+  "importRowsAction": "{count, plural, =0{No rows to import} =1{Import 1 row} other{Import {count} rows}}",
+  "@importRowsAction": {
+    "description": "CTA on the import preview screen — pluralised count of selected rows.",
+    "placeholders": {
+      "count": { "type": "int", "format": "compact" }
+    }
+  },
+  "transactionsCount": "{count, plural, =0{No transactions} =1{1 transaction} other{{count} transactions}}",
+  "@transactionsCount": {
+    "description": "Pluralised transaction count used in analytics summaries.",
+    "placeholders": {
+      "count": { "type": "int", "format": "compact" }
+    }
+  },
+  "categoriesCount": "{count, plural, =0{No categories} =1{1 category} other{{count} categories}}",
+  "@categoriesCount": {
+    "description": "Pluralised category count used in analytics summaries.",
+    "placeholders": {
+      "count": { "type": "int", "format": "compact" }
+    }
+  },
+  "pinAttemptsLeft": "{count, plural, =1{Incorrect PIN. 1 attempt left.} other{Incorrect PIN. {count} attempts left.}}",
+  "@pinAttemptsLeft": {
+    "description": "Error label on the PIN lock screen showing remaining attempts before lockout.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "exitAppTitle": "Exit Money Manager?",
+  "@exitAppTitle": { "description": "Title for the exit-app confirmation dialog shown when the user presses the device back button on the home tab." },
+  "exitAppMessage": "You'll be taken out of the app. Your data stays saved.",
+  "@exitAppMessage": { "description": "Body for the exit-app confirmation dialog." },
+  "exit": "Exit",
+  "@exit": { "description": "Confirm-exit button label in the exit-app dialog." }
 }

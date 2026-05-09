@@ -375,6 +375,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Something went wrong. Please try again.'**
   String get errorGeneric;
+
+  /// Settings tile and import screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Import data'**
+  String get importData;
+
+  /// Import preview screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Import preview'**
+  String get importPreview;
+
+  /// Import summary screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Import summary'**
+  String get importSummary;
+
+  /// CTA on the import preview screen — pluralised count of selected rows.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No rows to import} =1{Import 1 row} other{Import {count} rows}}'**
+  String importRowsAction(int count);
+
+  /// Pluralised transaction count used in analytics summaries.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No transactions} =1{1 transaction} other{{count} transactions}}'**
+  String transactionsCount(int count);
+
+  /// Pluralised category count used in analytics summaries.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No categories} =1{1 category} other{{count} categories}}'**
+  String categoriesCount(int count);
+
+  /// Error label on the PIN lock screen showing remaining attempts before lockout.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Incorrect PIN. 1 attempt left.} other{Incorrect PIN. {count} attempts left.}}'**
+  String pinAttemptsLeft(int count);
+
+  /// Title for the exit-app confirmation dialog shown when the user presses the device back button on the home tab.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit Money Manager?'**
+  String get exitAppTitle;
+
+  /// Body for the exit-app confirmation dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll be taken out of the app. Your data stays saved.'**
+  String get exitAppMessage;
+
+  /// Confirm-exit button label in the exit-app dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get exit;
 }
 
 class _AppLocalizationsDelegate
