@@ -44,6 +44,8 @@ class SettingsScreen extends ConsumerWidget {
                 _SectionHeader('Appearance'),
                 const SizedBox(height: AppSpacing.sm),
                 _ThemeTile(),
+                const SizedBox(height: AppSpacing.sm),
+                _HomeLayoutTile(),
                 const SizedBox(height: AppSpacing.lg),
 
                 // Currency
@@ -257,6 +259,24 @@ class _ThemeTile extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Home layout tile ──────────────────────────────────────────────────────────
+
+class _HomeLayoutTile extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      onTap: () => context.push(AppRoutes.homeLayout),
+      child: const ListTile(
+        leading: Icon(Icons.dashboard_customize_rounded),
+        title: Text('Home screen'),
+        subtitle: Text('Choose which sections appear on Home'),
+        trailing: Icon(Icons.chevron_right_rounded, size: 18),
+        contentPadding: EdgeInsets.zero,
       ),
     );
   }

@@ -15,7 +15,9 @@ import '../../../insights/domain/providers/insights_providers.dart';
 import '../../../sms/domain/providers/sms_providers.dart';
 import '../../../transactions/presentation/widgets/add_transaction_sheet.dart';
 import '../../../transactions/presentation/widgets/transaction_tile.dart';
+import '../../domain/models/home_section.dart';
 import '../../domain/providers/dashboard_providers.dart';
+import '../../domain/providers/home_layout_provider.dart';
 import '../widgets/balance_card.dart';
 import '../widgets/spending_ring.dart';
 
@@ -62,6 +64,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final profileName = ref.watch(profileNameProvider).valueOrNull ?? '';
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    // While the layout preference is loading we render the defaults so the
+    // dashboard never flashes empty for a new user.
+    final enabledSections = ref.watch(homeLayoutProvider).valueOrNull ??
+        HomeSection.defaultEnabledSet;
 
     return Scaffold(
       body: RefreshIndicator(
@@ -79,21 +85,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: AppSpacing.md),
+                  // Balance card is the headline of the dashboard and is
+                  // intentionally not user-toggleable.
                   const BalanceCard(),
-                  const SizedBox(height: AppSpacing.lg),
-                  _QuickStatsRow(),
-                  const SizedBox(height: AppSpacing.lg),
-                  _SmsDetectionBanner(),
-                  const SizedBox(height: AppSpacing.lg),
-                  _InsightsSummaryCard(),
-                  const SizedBox(height: AppSpacing.lg),
-                  const SpendingRing(),
-                  const SizedBox(height: AppSpacing.lg),
-                  _BudgetHealthBanner(),
-                  const SizedBox(height: AppSpacing.lg),
-                  _GoalsSection(),
-                  const SizedBox(height: AppSpacing.lg),
-                  _RecentTransactionsSection(),
+                  ..._buildOptionalSections(enabledSections),
                   const SizedBox(height: 100),
                 ],
               ),
@@ -113,6 +108,32 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
       ),
     );
+  }
+
+  /// Builds the toggleable sections in the user-configured order. Each entry
+  /// is preceded by a uniform spacer so the layout stays consistent
+  /// regardless of how many sections are enabled.
+  List<Widget> _buildOptionalSections(Set<HomeSection> enabled) {
+    Widget spaced(Widget child) => Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.lg),
+          child: child,
+        );
+
+    final widgets = <Widget>[];
+    for (final section in HomeSection.values) {
+      if (!enabled.contains(section)) continue;
+      final widget = switch (section) {
+        HomeSection.quickStats => _QuickStatsRow(),
+        HomeSection.smsBanner => _SmsDetectionBanner(),
+        HomeSection.insightsSummary => _InsightsSummaryCard(),
+        HomeSection.spendingRing => const SpendingRing(),
+        HomeSection.budgetHealth => _BudgetHealthBanner(),
+        HomeSection.goals => _GoalsSection(),
+        HomeSection.recentTransactions => _RecentTransactionsSection(),
+      };
+      widgets.add(spaced(widget));
+    }
+    return widgets;
   }
 
   SliverAppBar _buildAppBar(BuildContext context, String profileName) {

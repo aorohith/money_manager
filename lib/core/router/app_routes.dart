@@ -14,6 +14,7 @@ abstract final class AppRoutes {
   static const String goals = '/goals';
   static const String insights = '/insights';
   static const String settings = '/settings';
+  static const String homeLayout = '/settings/home-layout';
   static const String smsInbox = '/sms/inbox';
   static const String smsOnboarding = '/sms/onboarding';
   static const String smsSettings = '/sms/settings';
@@ -45,6 +46,7 @@ abstract final class AppRouteNames {
   static const String goalDetail = 'goal-detail';
   static const String insights = 'insights';
   static const String settings = 'settings';
+  static const String homeLayout = 'home-layout';
   static const String smsInbox = 'sms-inbox';
   static const String smsOnboarding = 'sms-onboarding';
   static const String smsSettings = 'sms-settings';

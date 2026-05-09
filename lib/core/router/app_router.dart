@@ -18,6 +18,7 @@ import '../../features/analytics/presentation/screens/analytics_screen.dart';
 import '../../features/analytics/presentation/screens/category_detail_screen.dart';
 import '../../features/analytics/domain/models/analytics_data.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
+import '../../features/dashboard/presentation/screens/home_layout_screen.dart';
 import '../../features/budgets/presentation/screens/budgets_screen.dart';
 import '../../features/goals/presentation/screens/goals_screen.dart';
 import '../../features/goals/presentation/screens/goal_detail_screen.dart';
@@ -196,6 +197,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: AppRoutes.settings,
             name: AppRouteNames.settings,
             builder: (_, __) => const SettingsScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.homeLayout,
+            name: AppRouteNames.homeLayout,
+            builder: (_, __) => const HomeLayoutScreen(),
           ),
           GoRoute(
             path: AppRoutes.smsInbox,
