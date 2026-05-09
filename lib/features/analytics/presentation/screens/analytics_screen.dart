@@ -17,7 +17,10 @@ import '../widgets/period_selector.dart';
 // ── Local state ───────────────────────────────────────────────────────────────
 
 final _selectedDonutIndexProvider = StateProvider<int?>((_) => null);
-final _isListViewProvider = StateProvider<bool>((_) => false);
+final _analyticsContentViewProvider =
+    StateProvider<AnalyticsContentView>((_) => AnalyticsContentView.categories);
+
+enum AnalyticsContentView { categories, transactions }
 
 // ── Analytics screen ──────────────────────────────────────────────────────────
 
@@ -28,7 +31,8 @@ class AnalyticsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final params = ref.watch(analyticsParamsProvider);
     final analyticsAsync = ref.watch(analyticsProvider(params));
-    final isListView = ref.watch(_isListViewProvider);
+    final contentView = ref.watch(_analyticsContentViewProvider);
+    final showingTransactions = contentView == AnalyticsContentView.transactions;
     final currencySymbol =
         ref.watch(currencySymbolProvider).valueOrNull ?? '\$';
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -56,52 +60,7 @@ class AnalyticsScreen extends ConsumerWidget {
               ),
             ),
             actions: [
-              // Chart ↔ List view toggle
-              Semantics(
-                button: true,
-                label: isListView ? 'Switch to chart view' : 'Switch to list view',
-                child: GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    ref.read(_isListViewProvider.notifier).state = !isListView;
-                  },
-                  child: AnimatedContainer(
-                    duration: AppDurations.fast,
-                    width: 36,
-                    height: 36,
-                    margin:
-                        const EdgeInsets.only(right: AppSpacing.screenPadding),
-                    decoration: BoxDecoration(
-                      color: isListView
-                          ? AppColors.brand.withAlpha(isDark ? 40 : 20)
-                          : (isDark
-                              ? AppColors.surfaceDark
-                              : AppColors.surfaceVariant),
-                      borderRadius:
-                          BorderRadius.circular(AppSpacing.radiusSm),
-                      border: Border.all(
-                        color: isListView
-                            ? AppColors.brand.withAlpha(80)
-                            : (isDark
-                                ? AppColors.outlineDark
-                                : AppColors.outline),
-                        width: 1,
-                      ),
-                    ),
-                    child: Icon(
-                      isListView
-                          ? Icons.donut_large_rounded
-                          : Icons.list_rounded,
-                      size: 18,
-                      color: isListView
-                          ? AppColors.brand
-                          : (isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondary),
-                    ),
-                  ),
-                ),
-              ),
+              const SizedBox(width: AppSpacing.screenPadding),
             ],
           ),
 
@@ -113,6 +72,15 @@ class AnalyticsScreen extends ConsumerWidget {
                 const PeriodSelector(),
                 const SizedBox(height: AppSpacing.sm),
                 const DateNavigator(),
+                const SizedBox(height: AppSpacing.sm),
+                _ContentViewToggle(
+                  selectedView: contentView,
+                  isDark: isDark,
+                  onChanged: (view) {
+                    HapticFeedback.lightImpact();
+                    ref.read(_analyticsContentViewProvider.notifier).state = view;
+                  },
+                ),
                 const SizedBox(height: AppSpacing.md),
               ],
             ),
@@ -131,8 +99,8 @@ class AnalyticsScreen extends ConsumerWidget {
             ),
           ),
 
-          // ── Chart section (hidden in list view) ───────────────────────────────
-          if (!isListView)
+          // ── Categories section ─────────────────────────────────────────────────
+          if (!showingTransactions)
             SliverToBoxAdapter(
               child: analyticsAsync.when(
                 data: (data) => _ChartSection(
@@ -148,52 +116,54 @@ class AnalyticsScreen extends ConsumerWidget {
             ),
 
           // ── Transactions header ───────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: analyticsAsync.maybeWhen(
-              data: (data) => data.isEmpty
-                  ? const SizedBox.shrink()
-                  : _SectionHeader(title: 'Transactions', isDark: isDark),
-              orElse: () => const SizedBox.shrink(),
+          if (showingTransactions)
+            SliverToBoxAdapter(
+              child: analyticsAsync.maybeWhen(
+                data: (data) => data.isEmpty
+                    ? const SizedBox.shrink()
+                    : _SectionHeader(title: 'Transactions', isDark: isDark),
+                orElse: () => const SizedBox.shrink(),
+              ),
             ),
-          ),
 
           // ── Transaction list ──────────────────────────────────────────────────
-          analyticsAsync.when(
-            data: (data) {
-              if (data.isEmpty) {
+          if (showingTransactions)
+            analyticsAsync.when(
+              data: (data) {
+                if (data.isEmpty) {
+                  return SliverToBoxAdapter(
+                    child: _EmptyState(isDark: isDark),
+                  );
+                }
                 return SliverToBoxAdapter(
-                  child: _EmptyState(isDark: isDark),
+                  child: GroupedExpenseList(
+                    dayGroups: data.dayGroups,
+                    monthGroups: data.monthGroups,
+                    categoryMap: data.categoryMap,
+                    currencySymbol: currencySymbol,
+                    period: params.period,
+                    onCategoryTap: (categoryId) =>
+                        _goToCategoryDetail(context, categoryId, params),
+                  ),
                 );
-              }
-              return SliverToBoxAdapter(
-                child: GroupedExpenseList(
-                  dayGroups: data.dayGroups,
-                  monthGroups: data.monthGroups,
-                  categoryMap: data.categoryMap,
-                  currencySymbol: currencySymbol,
-                  period: params.period,
-                  onCategoryTap: (categoryId) =>
-                      _goToCategoryDetail(context, categoryId, params),
-                ),
-              );
-            },
-            loading: () =>
-                const SliverToBoxAdapter(child: SizedBox.shrink()),
-            error: (e, _) => SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Text(
-                  'Unable to load data',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondary,
+              },
+              loading: () =>
+                  const SliverToBoxAdapter(child: SizedBox.shrink()),
+              error: (e, _) => SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Text(
+                    'Unable to load data',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondary,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
 
           const SliverToBoxAdapter(child: SizedBox(height: 80)),
         ],
@@ -208,6 +178,73 @@ class AnalyticsScreen extends ConsumerWidget {
       extra: params,
     );
   }
+}
+
+class _ContentViewToggle extends StatelessWidget {
+  const _ContentViewToggle({
+    required this.selectedView,
+    required this.isDark,
+    required this.onChanged,
+  });
+
+  final AnalyticsContentView selectedView;
+  final bool isDark;
+  final ValueChanged<AnalyticsContentView> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 40,
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        border: Border.all(
+          color: isDark ? AppColors.outlineDark : AppColors.outline,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: AnalyticsContentView.values.map((view) {
+          final isSelected = selectedView == view;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onChanged(view),
+              child: AnimatedContainer(
+                duration: AppDurations.fast,
+                margin: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? (isDark ? AppColors.brandLight : AppColors.brand)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  _label(view),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected
+                        ? Colors.white
+                        : (isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondary),
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  String _label(AnalyticsContentView view) => switch (view) {
+        AnalyticsContentView.categories => 'Categories',
+        AnalyticsContentView.transactions => 'Transactions',
+      };
 }
 
 // ── Compact balance summary ───────────────────────────────────────────────────
