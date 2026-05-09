@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/constants.dart';
+import '../domain/auth_config.dart';
 import '../providers/auth_provider.dart';
 import 'pin_pad.dart';
 
@@ -15,7 +16,7 @@ class PinLockScreen extends ConsumerStatefulWidget {
 }
 
 class _PinLockScreenState extends ConsumerState<PinLockScreen> {
-  static const _pinLength = 6;
+  static const _pinLength = AuthConfig.pinLength;
 
   String _current = '';
   bool _shake = false;

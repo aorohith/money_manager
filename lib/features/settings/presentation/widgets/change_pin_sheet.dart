@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/constants.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../../../auth/domain/auth_config.dart';
 import '../../../auth/providers/auth_provider.dart';
 
 Future<void> showChangePinSheet(BuildContext context) {
@@ -89,6 +90,13 @@ class _ChangePinFormState extends ConsumerState<_ChangePinForm> {
 
   @override
   Widget build(BuildContext context) {
+    final pinLength = AuthConfig.pinLength;
+    final pinHint = '${AuthConfig.pinLengthLabel} PIN';
+    final pinFormatters = <TextInputFormatter>[
+      FilteringTextInputFormatter.digitsOnly,
+      LengthLimitingTextInputFormatter(pinLength),
+    ];
+
     return Form(
       key: _formKey,
       child: Column(
@@ -97,47 +105,39 @@ class _ChangePinFormState extends ConsumerState<_ChangePinForm> {
           AppTextField(
             controller: _currentCtrl,
             label: 'Current PIN',
-            hint: '6-digit PIN',
+            hint: pinHint,
             prefixIcon: const Icon(Icons.lock_outline_rounded),
             obscureText: true,
             keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(6),
-            ],
-            validator: (v) => (v == null || v.length != 6)
-                ? 'Enter your current 6-digit PIN'
+            inputFormatters: pinFormatters,
+            validator: (v) => (v == null || v.length != pinLength)
+                ? 'Enter your current $pinHint'
                 : null,
           ),
           const SizedBox(height: AppSpacing.md),
           AppTextField(
             controller: _newCtrl,
             label: 'New PIN',
-            hint: '6-digit PIN',
+            hint: pinHint,
             prefixIcon: const Icon(Icons.lock_rounded),
             obscureText: true,
             keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(6),
-            ],
-            validator: (v) =>
-                (v == null || v.length != 6) ? 'Enter a 6-digit PIN' : null,
+            inputFormatters: pinFormatters,
+            validator: (v) => (v == null || v.length != pinLength)
+                ? 'Enter a $pinHint'
+                : null,
           ),
           const SizedBox(height: AppSpacing.md),
           AppTextField(
             controller: _confirmCtrl,
             label: 'Confirm New PIN',
-            hint: '6-digit PIN',
+            hint: pinHint,
             prefixIcon: const Icon(Icons.lock_rounded),
             obscureText: true,
             keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(6),
-            ],
+            inputFormatters: pinFormatters,
             validator: (v) {
-              if (v == null || v.length != 6) return 'Enter a 6-digit PIN';
+              if (v == null || v.length != pinLength) return 'Enter a $pinHint';
               if (v != _newCtrl.text) return 'PINs do not match';
               return null;
             },

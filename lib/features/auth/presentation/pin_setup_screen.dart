@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/constants.dart';
+import '../domain/auth_config.dart';
 import '../providers/auth_provider.dart';
 import 'pin_pad.dart';
 
@@ -15,7 +16,7 @@ class PinSetupScreen extends ConsumerStatefulWidget {
 }
 
 class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
-  static const _pinLength = 6;
+  static const _pinLength = AuthConfig.pinLength;
 
   _PinSetupStep _step = _PinSetupStep.enter;
   String _firstPin = '';
@@ -86,11 +87,14 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
               ),
               const SizedBox(height: AppSpacing.md),
               Text(
-                isConfirm ? 'Confirm your PIN' : 'Create a 6-digit PIN',
+                isConfirm
+                    ? 'Confirm your PIN'
+                    : 'Create a ${AuthConfig.pinLengthLabel} PIN',
                 style: Theme.of(context).textTheme.headlineSmall,
                 textAlign: TextAlign.center,
-                semanticsLabel:
-                    isConfirm ? 'Confirm your PIN' : 'Create a 6 digit PIN',
+                semanticsLabel: isConfirm
+                    ? 'Confirm your PIN'
+                    : 'Create a $_pinLength digit PIN',
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
