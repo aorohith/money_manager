@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/constants.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../auth/providers/auth_provider.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/providers/analytics_providers.dart';
 import '../widgets/category_bar_list.dart';
 import '../widgets/date_navigator.dart';
@@ -406,13 +407,16 @@ class _ChartSection extends ConsumerWidget {
                 ),
               ),
               const Spacer(),
-              Text(
-                '${data.categorySummaries.length} categories',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: isDark
-                      ? AppColors.textTertiaryDark
-                      : AppColors.textTertiary,
+              Builder(
+                builder: (context) => Text(
+                  AppLocalizations.of(context)
+                      .categoriesCount(data.categorySummaries.length),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark
+                        ? AppColors.textTertiaryDark
+                        : AppColors.textTertiary,
+                  ),
                 ),
               ),
             ],

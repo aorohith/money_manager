@@ -53,10 +53,14 @@ class GetBudgetProgressUseCase {
   Future<AsyncValue<BudgetProgress>> call({
     required BudgetModel budget,
     required int month,
+    String? baseCurrencyCode,
   }) async {
     try {
-      final progress =
-          await _repo.getBudgetProgress(budget: budget, month: month);
+      final progress = await _repo.getBudgetProgress(
+        budget: budget,
+        month: month,
+        baseCurrencyCode: baseCurrencyCode,
+      );
       return AsyncData(progress);
     } catch (e, s) {
       return AsyncError(e, s);

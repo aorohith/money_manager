@@ -14,24 +14,18 @@ class PinLockScreen extends ConsumerStatefulWidget {
   ConsumerState<PinLockScreen> createState() => _PinLockScreenState();
 }
 
-class _PinLockScreenState extends ConsumerState<PinLockScreen>
-    with WidgetsBindingObserver {
+class _PinLockScreenState extends ConsumerState<PinLockScreen> {
   static const _pinLength = 6;
-  static const _maxAttempts = 5;
-  static const _lockoutSeconds = 60;
 
   String _current = '';
   bool _shake = false;
   String? _error;
-  int _attempts = 0;
-  int _lockoutRemaining = 0;
-  Timer? _lockoutTimer;
   bool _showBiometric = true;
+  bool _autoBiometricTried = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     unawaited(_initBiometricState());
   }
 
@@ -44,8 +38,13 @@ class _PinLockScreenState extends ConsumerState<PinLockScreen>
     if (!mounted) return;
     setState(() => _showBiometric = canUseBiometric);
 
-    if (!canUseBiometric) return;
-    await _tryBiometricOnOpen();
+    final lockout = ref.read(pinLockoutProvider).valueOrNull;
+    if (canUseBiometric &&
+        !_autoBiometricTried &&
+        !(lockout?.isLocked ?? false)) {
+      _autoBiometricTried = true;
+      await _tryBiometricOnOpen();
+    }
   }
 
   Future<void> _tryBiometricOnOpen() async {
@@ -58,6 +57,8 @@ class _PinLockScreenState extends ConsumerState<PinLockScreen>
   }
 
   Future<void> _onBiometricTap() async {
+    final lockout = ref.read(pinLockoutProvider).valueOrNull;
+    if (lockout?.isLocked ?? false) return;
     final ok = await ref.read(authProvider.notifier).unlockWithBiometric();
     if (!ok && mounted) {
       setState(() {
@@ -67,7 +68,8 @@ class _PinLockScreenState extends ConsumerState<PinLockScreen>
   }
 
   void _onDigit(String d) {
-    if (_lockoutRemaining > 0) return;
+    final lockout = ref.read(pinLockoutProvider).valueOrNull;
+    if (lockout?.isLocked ?? false) return;
     if (_current.length >= _pinLength) return;
     setState(() {
       _current += d;
@@ -83,16 +85,29 @@ class _PinLockScreenState extends ConsumerState<PinLockScreen>
   }
 
   Future<void> _verify() async {
-    final ok =
-        await ref.read(authProvider.notifier).unlockWithPin(_current);
-    if (ok) return; // GoRouter redirect takes over
+    final result = await ref
+        .read(authProvider.notifier)
+        .verifyPinWithLockout(_current);
 
-    _attempts++;
-    final attemptsLeft = _maxAttempts - _attempts;
+    // Force the lockout state provider to re-read so the UI sees the new
+    // counter / lockoutUntil immediately.
+    await ref.read(pinLockoutProvider.notifier).refresh();
 
-    if (_attempts >= _maxAttempts) {
-      _startLockout();
+    if (result.success) return; // GoRouter redirect takes over.
+
+    if (!mounted) return;
+    final lockout = result.lockout;
+    if (lockout.isLocked) {
+      setState(() {
+        _shake = true;
+        _error = null;
+        _current = '';
+      });
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (mounted) setState(() => _shake = false);
     } else {
+      final attemptsLeft =
+          AuthNotifier.maxAttemptsPerCycle - lockout.failedAttempts;
       setState(() {
         _shake = true;
         _error = attemptsLeft == 1
@@ -105,32 +120,12 @@ class _PinLockScreenState extends ConsumerState<PinLockScreen>
     }
   }
 
-  void _startLockout() {
-    setState(() {
-      _lockoutRemaining = _lockoutSeconds;
-      _current = '';
-      _error = null;
-      _attempts = 0;
-    });
-    _lockoutTimer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) {
-        t.cancel();
-        return;
-      }
-      setState(() => _lockoutRemaining--);
-      if (_lockoutRemaining <= 0) t.cancel();
-    });
-  }
-
-  @override
-  void dispose() {
-    _lockoutTimer?.cancel();
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
+    final lockoutState = ref.watch(pinLockoutProvider).valueOrNull;
+    final isLocked = lockoutState?.isLocked ?? false;
+    final remaining = lockoutState?.remaining ?? Duration.zero;
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -150,11 +145,11 @@ class _PinLockScreenState extends ConsumerState<PinLockScreen>
                 semanticsLabel: 'Enter your PIN to unlock the app',
               ),
               const Spacer(),
-              if (_lockoutRemaining > 0)
+              if (isLocked)
                 Semantics(
                   liveRegion: true,
                   child: Text(
-                    'Too many attempts.\nTry again in $_lockoutRemaining seconds.',
+                    'Too many attempts.\nTry again in ${_formatRemaining(remaining)}.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.error,
@@ -190,5 +185,19 @@ class _PinLockScreenState extends ConsumerState<PinLockScreen>
         ),
       ),
     );
+  }
+
+  static String _formatRemaining(Duration d) {
+    if (d.inHours >= 1) {
+      final h = d.inHours;
+      final m = d.inMinutes.remainder(60);
+      return m == 0 ? '${h}h' : '${h}h ${m}m';
+    }
+    if (d.inMinutes >= 1) {
+      final m = d.inMinutes;
+      final s = d.inSeconds.remainder(60);
+      return s == 0 ? '${m}m' : '${m}m ${s}s';
+    }
+    return '${d.inSeconds.clamp(0, 60)}s';
   }
 }

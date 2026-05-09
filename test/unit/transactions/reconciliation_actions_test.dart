@@ -28,6 +28,9 @@ void main() {
         isIncome: false,
       ),
     );
+    registerFallbackValue(
+      AccountModel(name: 'fallback', iconCodePoint: 0, colorValue: 0),
+    );
   });
 
   setUp(() {
@@ -56,7 +59,10 @@ void main() {
     'no adjustment transaction when target equals calculated balance',
     () async {
       when(
-        () => txRepo.getTransactionDeltaForAccount(account.id),
+        () => txRepo.getTransactionDeltaForAccount(
+          any(),
+          baseCurrencyCode: any(named: 'baseCurrencyCode'),
+        ),
       ).thenAnswer((_) async => 250.0);
       when(() => accountRepo.update(account)).thenAnswer((_) async {});
 
@@ -65,17 +71,29 @@ void main() {
           .setActualBalance(account: account, targetBalance: 1250.0);
 
       verify(() => accountRepo.update(account)).called(1);
-      verifyNever(() => txRepo.add(any()));
+      verifyNever(
+        () => txRepo.addWithAccountUpdate(
+          transaction: any(named: 'transaction'),
+          account: any(named: 'account'),
+        ),
+      );
       expect(account.actualBalance, 1250.0);
     },
   );
 
   test('creates adjustment income transaction when target is higher', () async {
     when(
-      () => txRepo.getTransactionDeltaForAccount(account.id),
+      () => txRepo.getTransactionDeltaForAccount(
+        any(),
+        baseCurrencyCode: any(named: 'baseCurrencyCode'),
+      ),
     ).thenAnswer((_) async => 200.0); // calculated = 1200
-    when(() => txRepo.add(any())).thenAnswer((_) async => 101);
-    when(() => accountRepo.update(account)).thenAnswer((_) async {});
+    when(
+      () => txRepo.addWithAccountUpdate(
+        transaction: any(named: 'transaction'),
+        account: any(named: 'account'),
+      ),
+    ).thenAnswer((_) async => 101);
 
     await container
         .read(accountReconciliationActionsProvider)
@@ -85,24 +103,36 @@ void main() {
           note: 'Cash counted',
         );
 
-    final captured =
-        verify(() => txRepo.add(captureAny())).captured.single
-            as TransactionModel;
-    expect(captured.entryType, TransactionEntryType.adjustment);
-    expect(captured.isIncome, isTrue);
-    expect(captured.amount, 200.0);
-    expect(captured.accountId, account.id);
-    expect(captured.note, 'Cash counted');
-    verify(() => accountRepo.update(account)).called(1);
+    final captured = verify(
+      () => txRepo.addWithAccountUpdate(
+        transaction: captureAny(named: 'transaction'),
+        account: captureAny(named: 'account'),
+      ),
+    ).captured;
+    final tx = captured[0] as TransactionModel;
+    final acc = captured[1] as AccountModel;
+    expect(tx.entryType, TransactionEntryType.adjustment);
+    expect(tx.isIncome, isTrue);
+    expect(tx.amount, 200.0);
+    expect(tx.accountId, account.id);
+    expect(tx.note, 'Cash counted');
+    expect(acc.actualBalance, 1400.0);
     expect(account.actualBalance, 1400.0);
   });
 
   test('creates adjustment expense transaction when target is lower', () async {
     when(
-      () => txRepo.getTransactionDeltaForAccount(account.id),
+      () => txRepo.getTransactionDeltaForAccount(
+        any(),
+        baseCurrencyCode: any(named: 'baseCurrencyCode'),
+      ),
     ).thenAnswer((_) async => 100.0); // calculated = 1100
-    when(() => txRepo.add(any())).thenAnswer((_) async => 102);
-    when(() => accountRepo.update(account)).thenAnswer((_) async {});
+    when(
+      () => txRepo.addWithAccountUpdate(
+        transaction: any(named: 'transaction'),
+        account: any(named: 'account'),
+      ),
+    ).thenAnswer((_) async => 102);
 
     await container
         .read(accountReconciliationActionsProvider)
@@ -112,14 +142,19 @@ void main() {
           note: '',
         );
 
-    final captured =
-        verify(() => txRepo.add(captureAny())).captured.single
-            as TransactionModel;
-    expect(captured.entryType, TransactionEntryType.adjustment);
-    expect(captured.isIncome, isFalse);
-    expect(captured.amount, 200.0);
-    expect(captured.note, 'Balance adjustment');
-    verify(() => accountRepo.update(account)).called(1);
+    final captured = verify(
+      () => txRepo.addWithAccountUpdate(
+        transaction: captureAny(named: 'transaction'),
+        account: captureAny(named: 'account'),
+      ),
+    ).captured;
+    final tx = captured[0] as TransactionModel;
+    final acc = captured[1] as AccountModel;
+    expect(tx.entryType, TransactionEntryType.adjustment);
+    expect(tx.isIncome, isFalse);
+    expect(tx.amount, 200.0);
+    expect(tx.note, 'Balance adjustment');
+    expect(acc.actualBalance, 900.0);
     expect(account.actualBalance, 900.0);
   });
 }

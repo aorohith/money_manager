@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../auth/providers/auth_provider.dart';
 import '../../../transactions/data/models/category_model.dart';
 import '../../../transactions/data/models/transaction_model.dart';
+import '../../../transactions/data/repositories/transaction_repository.dart';
 import '../../../transactions/domain/providers/transaction_providers.dart';
 
 // ── Period selector ──────────────────────────────────────────────────────────
@@ -62,6 +64,7 @@ final dashboardProvider =
   final period = ref.watch(dashboardPeriodProvider);
   final repo = ref.read(transactionRepositoryProvider);
   final categoryRepo = ref.read(categoryRepositoryProvider);
+  final baseCurrency = ref.watch(currencyCodeProvider).valueOrNull;
 
   final (from, to) = _periodRange(period);
 
@@ -69,13 +72,19 @@ final dashboardProvider =
   await for (final _ in repo.watchAll(from: from, to: to)) {
     // Run all queries concurrently for performance.
     final results = await Future.wait([
-      repo.getTotalIncome(from: from, to: to),
-      repo.getTotalExpense(from: from, to: to),
+      repo.getTotalIncome(
+          from: from, to: to, baseCurrencyCode: baseCurrency),
+      repo.getTotalExpense(
+          from: from, to: to, baseCurrencyCode: baseCurrency),
       repo.getAll(from: from, to: to),
-      repo.getCategorySummary(isIncome: false, from: from, to: to),
+      repo.getCategorySummary(
+          isIncome: false,
+          from: from,
+          to: to,
+          baseCurrencyCode: baseCurrency),
       categoryRepo.getAll(),
-      _getTodayExpense(repo),
-      _getWeekExpense(repo),
+      _getTodayExpense(repo, baseCurrency),
+      _getWeekExpense(repo, baseCurrency),
     ]);
 
     // Unpack into named variables before use.  This keeps the mapping
@@ -131,16 +140,29 @@ final dashboardProvider =
   }
 }
 
-Future<double> _getTodayExpense(dynamic repo) async {
+Future<double> _getTodayExpense(
+  TransactionRepository repo,
+  String? baseCurrency,
+) async {
   final now = DateTime.now();
   final start = DateTime(now.year, now.month, now.day);
   final end = start.add(const Duration(days: 1));
-  return repo.getTotalExpense(from: start, to: end);
+  return repo.getTotalExpense(
+    from: start,
+    to: end,
+    baseCurrencyCode: baseCurrency,
+  );
 }
 
-Future<double> _getWeekExpense(dynamic repo) async {
+Future<double> _getWeekExpense(
+  TransactionRepository repo,
+  String? baseCurrency,
+) async {
   final now = DateTime.now();
   final start =
       DateTime(now.year, now.month, now.day - now.weekday + 1); // Monday
-  return repo.getTotalExpense(from: start);
+  return repo.getTotalExpense(
+    from: start,
+    baseCurrencyCode: baseCurrency,
+  );
 }

@@ -48,6 +48,12 @@ class SmsRepository {
       if (linkedTransactionId != null) {
         tx.linkedTransactionId = linkedTransactionId;
       }
+      // Drop the raw notification body once the user has acted on the row.
+      // We keep merchant + amount for display but the full text is privacy
+      // sensitive (account hints, balances, OTPs in noisy senders).
+      if (status != SmsReviewStatus.pending) {
+        tx.rawText = '';
+      }
       await _isar.smsParsedTransactions.put(tx);
     });
   }
@@ -67,11 +73,13 @@ class SmsRepository {
       // 1. Persist the real transaction
       final txId = await _isar.transactionModels.put(tx);
 
-      // 2. Mark the SMS record as approved
+      // 2. Mark the SMS record as approved and drop its raw body.
       final sms = await _isar.smsParsedTransactions.get(smsId);
       if (sms != null) {
         sms.status = SmsReviewStatus.approved;
         sms.linkedTransactionId = txId;
+        sms.rawText = '';
+        sms.updatedAt = DateTime.now();
         await _isar.smsParsedTransactions.put(sms);
       }
 
@@ -85,6 +93,48 @@ class SmsRepository {
       }
 
       return txId;
+    });
+  }
+
+  // ── TTL-style purge ─────────────────────────────────────────────────────────
+
+  /// Purges historic parsed-SMS rows.
+  ///
+  /// * Reviewed rows (approved/skipped/duplicate) older than [reviewedTtl]
+  ///   are hard-deleted — their content is no longer useful and keeping
+  ///   redacted-but-still-personal merchant/amount data forever is bad
+  ///   privacy hygiene.
+  /// * Pending rows older than [pendingTtl] are also deleted; if the user
+  ///   hasn't acted on a notification within a few months they almost
+  ///   certainly won't.
+  Future<void> pruneOldParsedTransactions({
+    Duration reviewedTtl = const Duration(days: 30),
+    Duration pendingTtl = const Duration(days: 90),
+  }) async {
+    final now = DateTime.now();
+    final reviewedCutoff = now.subtract(reviewedTtl);
+    final pendingCutoff = now.subtract(pendingTtl);
+
+    await _isar.writeTxn(() async {
+      final reviewed = await _isar.smsParsedTransactions
+          .filter()
+          .not()
+          .statusEqualTo(SmsReviewStatus.pending)
+          .updatedAtLessThan(reviewedCutoff)
+          .findAll();
+      final pending = await _isar.smsParsedTransactions
+          .filter()
+          .statusEqualTo(SmsReviewStatus.pending)
+          .detectedAtLessThan(pendingCutoff)
+          .findAll();
+
+      final ids = <int>[
+        ...reviewed.map((e) => e.id),
+        ...pending.map((e) => e.id),
+      ];
+      if (ids.isNotEmpty) {
+        await _isar.smsParsedTransactions.deleteAll(ids);
+      }
     });
   }
 

@@ -65,6 +65,7 @@ abstract class BudgetRepository {
   Future<BudgetProgress> getBudgetProgress({
     required BudgetModel budget,
     required int month,
+    String? baseCurrencyCode,
   });
   Future<void> deleteBudget(Id id);
   Future<BudgetModel?> getOverallBudget(int month);
@@ -115,6 +116,7 @@ class BudgetRepositoryImpl implements BudgetRepository {
   Future<BudgetProgress> getBudgetProgress({
     required BudgetModel budget,
     required int month,
+    String? baseCurrencyCode,
   }) async {
     final year = month ~/ 100;
     final mo = month % 100;
@@ -131,10 +133,18 @@ class BudgetRepositoryImpl implements BudgetRepository {
 
     final double spent;
     if (budget.categoryId == null) {
-      spent = await _transactionRepo.getTotalExpense(from: from, to: to);
+      spent = await _transactionRepo.getTotalExpense(
+        from: from,
+        to: to,
+        baseCurrencyCode: baseCurrencyCode,
+      );
     } else {
       final summary = await _transactionRepo.getCategorySummary(
-          isIncome: false, from: from, to: to);
+        isIncome: false,
+        from: from,
+        to: to,
+        baseCurrencyCode: baseCurrencyCode,
+      );
       spent = summary[budget.categoryId] ?? 0.0;
     }
 

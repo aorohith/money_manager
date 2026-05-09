@@ -122,13 +122,17 @@ ImportRow _parseTransactionRow(
     rowNumber,
     diagnostics: diagnostics,
   );
-  final amount = _requiredDouble(
+  final rawAmount = _requiredDouble(
     values,
     mapping,
     ImportColumn.defaultAmount,
     rowNumber,
     diagnostics: diagnostics,
   );
+  // Bank statements often encode expenses with negative amounts. Direction
+  // is already captured by the sheet (income vs expense) or the row's
+  // transfer pairing, so we normalise to a positive magnitude here.
+  final amount = rawAmount.abs();
   final category = _requiredText(
     values,
     mapping,
@@ -145,15 +149,16 @@ ImportRow _parseTransactionRow(
   );
   final currency =
       _text(values, mapping, ImportColumn.defaultCurrency) ?? 'INR';
-  final originalAmount =
+  final rawOriginalAmount =
       _double(values, mapping, ImportColumn.transactionAmount) ??
       _double(values, mapping, ImportColumn.accountAmount);
+  final originalAmount = rawOriginalAmount?.abs();
   final originalCurrency =
       _text(values, mapping, ImportColumn.transactionCurrency) ??
       _text(values, mapping, ImportColumn.accountCurrency);
-  final fxRate = originalAmount == null || originalAmount == 0
+  final fxRate = (originalAmount == null || originalAmount == 0)
       ? null
-      : amount / originalAmount;
+      : (amount / originalAmount).abs();
 
   if (isIncome) {
     return IncomeImportRow(
@@ -201,13 +206,14 @@ ImportRow _parseTransferRow(
     rowNumber,
     diagnostics: diagnostics,
   );
-  final amount = _requiredDouble(
+  final rawAmount = _requiredDouble(
     values,
     mapping,
     ImportColumn.outgoingAmount,
     rowNumber,
     diagnostics: diagnostics,
   );
+  final amount = rawAmount.abs();
   final outgoing = _requiredText(
     values,
     mapping,
@@ -224,7 +230,8 @@ ImportRow _parseTransferRow(
   );
   final currency =
       _text(values, mapping, ImportColumn.outgoingCurrency) ?? 'INR';
-  final incomingAmount = _double(values, mapping, ImportColumn.incomingAmount);
+  final incomingAmount =
+      _double(values, mapping, ImportColumn.incomingAmount)?.abs();
   final incomingCurrency = _text(
     values,
     mapping,

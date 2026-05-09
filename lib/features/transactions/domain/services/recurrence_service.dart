@@ -43,6 +43,22 @@ class RecurrenceService {
             date: d,
             isIncome: template.isIncome,
             note: template.note,
+            // Copy through every monetary / context field from the template
+            // so generated occurrences participate in multi-currency totals,
+            // tag filters, and entry-type queries the same way the manual
+            // template does.
+            tags: List<String>.from(template.tags),
+            currencyCode: template.currencyCode,
+            originalAmount: template.originalAmount,
+            originalCurrencyCode: template.originalCurrencyCode,
+            fxRate: template.fxRate,
+            entryType: template.entryType,
+            // Intentionally NOT cloned:
+            //  * `transferGroupId` — sharing a group across instances would
+            //    cause `delete()` to soft-delete every historical row when
+            //    one was removed.
+            //  * `importBatchId` — these rows weren't imported, so attributing
+            //    them to a batch would mislead future import-undo features.
             recurrence: RecurrenceType.none,
           );
           await _isar.transactionModels.put(instance);

@@ -34,6 +34,7 @@ import '../../features/transactions/presentation/screens/manage_categories_scree
 import '../../features/transactions/presentation/screens/account_detail_screen.dart';
 import '../../features/transactions/presentation/screens/reconciliation_screen.dart';
 import '../../features/transactions/presentation/screens/transactions_screen.dart';
+import '../widgets/exit_confirmation_dialog.dart';
 
 part 'app_routes.dart';
 
@@ -45,9 +46,8 @@ final routerProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: kDebugMode,
     redirect: (context, state) {
       final authAsync = ref.read(authProvider);
-      if (authAsync.isLoading || authAsync.hasError) return null;
+      if (authAsync.isLoading) return null;
 
-      final status = authAsync.value!;
       final loc = state.uri.path;
 
       const publicPaths = [
@@ -58,6 +58,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         AppRoutes.pinSetup,
         AppRoutes.pinLock,
       ];
+
+      // If auth resolution failed (e.g. transient secure-storage IO error),
+      // fail closed: keep the user out of protected routes by sending them
+      // to the lock screen rather than rendering a screen that may read
+      // private data.
+      if (authAsync.hasError) {
+        if (publicPaths.contains(loc)) return null;
+        return AppRoutes.pinLock;
+      }
+
+      final status = authAsync.value!;
+
       if (publicPaths.contains(loc)) {
         // Once authenticated (PIN set or unlocked), leave the auth flow.
         // Splash handles its own navigation, so skip it here.
@@ -133,7 +145,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: 'category/:id',
                 name: AppRouteNames.analyticsCategory,
                 builder: (_, state) {
-                  final categoryId = int.parse(state.pathParameters['id']!);
+                  final categoryId =
+                      int.tryParse(state.pathParameters['id'] ?? '');
+                  if (categoryId == null) {
+                    return const _RouteNotFoundScreen(
+                      message: 'Invalid category link.',
+                    );
+                  }
                   final params = state.extra as AnalyticsParams?;
                   return CategoryDetailScreen(
                     categoryId: categoryId,
@@ -156,9 +174,16 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: ':id',
                 name: AppRouteNames.goalDetail,
-                builder: (_, state) => GoalDetailScreen(
-                  goalId: int.parse(state.pathParameters['id']!),
-                ),
+                builder: (_, state) {
+                  final goalId =
+                      int.tryParse(state.pathParameters['id'] ?? '');
+                  if (goalId == null) {
+                    return const _RouteNotFoundScreen(
+                      message: 'Invalid goal link.',
+                    );
+                  }
+                  return GoalDetailScreen(goalId: goalId);
+                },
               ),
             ],
           ),
@@ -200,9 +225,16 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: ':id',
                 name: AppRouteNames.accountDetail,
-                builder: (_, state) => AccountDetailScreen(
-                  accountId: int.parse(state.pathParameters['id']!),
-                ),
+                builder: (_, state) {
+                  final accountId =
+                      int.tryParse(state.pathParameters['id'] ?? '');
+                  if (accountId == null) {
+                    return const _RouteNotFoundScreen(
+                      message: 'Invalid account link.',
+                    );
+                  }
+                  return AccountDetailScreen(accountId: accountId);
+                },
               ),
             ],
           ),
@@ -240,6 +272,50 @@ final routerProvider = Provider<GoRouter>((ref) {
   return router;
 });
 
+/// Shown when a deep link with an unparseable id (e.g. `goals/abc`) lands on
+/// a route that expects an integer id. We render a friendly message and
+/// offer a one-tap exit instead of crashing during route build.
+class _RouteNotFoundScreen extends StatelessWidget {
+  const _RouteNotFoundScreen({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Not found')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.screenPadding),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.link_off_rounded, size: 56),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                message,
+                style: Theme.of(context).textTheme.titleMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              FilledButton(
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go(AppRoutes.dashboard);
+                  }
+                },
+                child: const Text('Go back'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Bridges Riverpod [authProvider] into a [Listenable] for GoRouter.
 class _AuthStatusListenable extends ChangeNotifier {
   _AuthStatusListenable(Ref ref) {
@@ -261,6 +337,19 @@ class _AppShell extends StatelessWidget {
     return 0;
   }
 
+  Future<void> _handleSystemPop(BuildContext context, int currentIndex) async {
+    // From any non-home tab, the device back button should bring the user
+    // back to Home rather than exit the app.
+    if (currentIndex != 0) {
+      context.go(AppRoutes.dashboard);
+      return;
+    }
+    final shouldExit = await ExitConfirmationDialog.show(context);
+    if (shouldExit) {
+      await SystemNavigator.pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
@@ -268,7 +357,14 @@ class _AppShell extends StatelessWidget {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      body: child,
+      body: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) return;
+          _handleSystemPop(context, currentIndex);
+        },
+        child: child,
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           border: Border(
@@ -328,3 +424,4 @@ class _AppShell extends StatelessWidget {
     );
   }
 }
+

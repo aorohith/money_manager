@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_manager/core/constants/constants.dart';
 import 'package:money_manager/core/theme/app_theme_extension.dart';
+import 'package:money_manager/l10n/app_localizations.dart';
 
 /// Wraps [widget] with MaterialApp + ProviderScope so widgets that use
 /// Theme or Riverpod providers can be pumped in isolation.
@@ -20,6 +21,8 @@ extension PumpApp on WidgetTester {
             colorScheme: ColorScheme.fromSeed(seedColor: AppColors.brand),
             extensions: [AppThemeExtension.light],
           ),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: widget,
         ),
       ),

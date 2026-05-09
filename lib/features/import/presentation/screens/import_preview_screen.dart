@@ -7,6 +7,7 @@ import 'package:money_manager/core/widgets/widgets.dart';
 import 'package:money_manager/features/import/domain/providers/import_providers.dart';
 import 'package:money_manager/features/import/presentation/widgets/column_mapping_sheet.dart';
 import 'package:money_manager/features/import/presentation/widgets/import_row_tile.dart';
+import 'package:money_manager/l10n/app_localizations.dart';
 
 class ImportPreviewScreen extends ConsumerWidget {
   const ImportPreviewScreen({super.key});
@@ -102,7 +103,8 @@ class ImportPreviewScreen extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.screenPadding),
               child: AppButton(
-                label: 'Import ${state.selectedCount} rows',
+                label: AppLocalizations.of(context)
+                    .importRowsAction(state.selectedCount),
                 loading: state.isLoading,
                 expanded: true,
                 onPressed: state.selectedCount == 0

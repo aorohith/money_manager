@@ -1,3 +1,6 @@
+import 'dart:async' show unawaited;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -336,6 +339,7 @@ Future<void> _export(
   WidgetRef ref, {
   required bool csv,
 }) async {
+  String? exportedPath;
   try {
     showAppSnackBar(
       context,
@@ -344,21 +348,36 @@ Future<void> _export(
     );
     final repo = ref.read(transactionRepositoryProvider);
     final categories = ref.read(categoriesProvider).valueOrNull ?? [];
-    final service = ExportService(repo, categories);
-    final path = csv ? await service.exportCsv() : await service.exportPdf();
+    final symbol = ref.read(currencySymbolProvider).valueOrNull ?? r'$';
+    final service =
+        ExportService(repo, categories, currencySymbol: symbol);
+    exportedPath =
+        csv ? await service.exportCsv() : await service.exportPdf();
     await Share.shareXFiles(
-      [XFile(path)],
+      [XFile(exportedPath)],
       subject: csv
           ? 'Money Manager — Transactions CSV'
           : 'Money Manager — Transactions Report',
     );
-  } catch (e) {
+  } catch (e, st) {
+    // Keep the raw exception out of the user-facing snackbar (it can leak
+    // file paths / internal class names) but log it for debugging.
+    if (kDebugMode) debugPrint('[Export] failed: $e\n$st');
     if (context.mounted) {
       showAppSnackBar(
         context,
-        message: 'Export failed: $e',
+        message: csv
+            ? 'Failed to export CSV. Please try again.'
+            : 'Failed to export PDF. Please try again.',
         type: AppSnackBarType.error,
       );
+    }
+  } finally {
+    if (exportedPath != null) {
+      // The share sheet returns once the user dismisses it; the file has
+      // been read by the receiving app by that point so we can safely
+      // reclaim the cache space.
+      unawaited(ExportService.deleteExportFile(exportedPath));
     }
   }
 }

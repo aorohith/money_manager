@@ -41,15 +41,25 @@ class _ChangePinFormState extends ConsumerState<_ChangePinForm> {
 
     setState(() => _loading = true);
 
-    final ds = ref.read(authDatasourceProvider);
-    final ok = await ds.verifyPin(_currentCtrl.text);
-    if (!ok) {
+    // Reuse the persistent lockout path so this surface can't be used to
+    // brute-force the current PIN (it would otherwise bypass the lock screen
+    // counter entirely).
+    final result = await ref
+        .read(authProvider.notifier)
+        .verifyPinWithLockout(_currentCtrl.text);
+
+    if (!result.success) {
       setState(() => _loading = false);
-      if (mounted) {
-        showAppSnackBar(context,
-            message: 'Current PIN is incorrect',
-            type: AppSnackBarType.error);
-      }
+      if (!mounted) return;
+      final message = result.lockout.isLocked
+          ? 'Too many attempts. Try again in '
+              '${_formatRemaining(result.lockout.remaining)}.'
+          : 'Current PIN is incorrect';
+      showAppSnackBar(
+        context,
+        message: message,
+        type: AppSnackBarType.error,
+      );
       return;
     }
 
@@ -61,6 +71,20 @@ class _ChangePinFormState extends ConsumerState<_ChangePinForm> {
           message: 'PIN changed successfully',
           type: AppSnackBarType.success);
     }
+  }
+
+  static String _formatRemaining(Duration d) {
+    if (d.inHours >= 1) {
+      final h = d.inHours;
+      final m = d.inMinutes.remainder(60);
+      return m == 0 ? '${h}h' : '${h}h ${m}m';
+    }
+    if (d.inMinutes >= 1) {
+      final m = d.inMinutes;
+      final s = d.inSeconds.remainder(60);
+      return s == 0 ? '${m}m' : '${m}m ${s}s';
+    }
+    return '${d.inSeconds.clamp(0, 60)}s';
   }
 
   @override

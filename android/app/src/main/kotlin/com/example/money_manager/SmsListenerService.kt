@@ -101,7 +101,10 @@ class SmsListenerService : NotificationListenerService() {
     }
 
     private fun isTrusted(pkg: String, title: String, body: String): Boolean {
-        if (trustedPackages.contains(pkg)) return true
+        // Both the package allowlist AND a transaction keyword must match.
+        // The previous OR check let any noisy notification mentioning "UPI"
+        // or "₹" through, including spam SMS-mirror apps and chat threads.
+        if (!trustedPackages.contains(pkg)) return false
         val combined = (title + body).lowercase()
         return transactionKeywords.any { combined.contains(it.lowercase()) }
     }

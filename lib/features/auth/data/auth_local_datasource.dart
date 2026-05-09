@@ -1,35 +1,125 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/security/pin_hasher.dart';
+
 const _kPinKey = 'app_pin';
 const _kOnboardingDone = 'onboarding_done';
 const _kProfileName = 'profile_name';
 const _kProfileColor = 'profile_color';
 const _kCurrencyCode = 'currency_code';
 const _kCurrencySymbol = 'currency_symbol';
+const _kPinFailedAttempts = 'pin_failed_attempts';
+const _kPinLockoutLevel = 'pin_lockout_level';
+const _kPinLockoutUntilMs = 'pin_lockout_until_ms';
+
+/// Keys this datasource owns inside [FlutterSecureStorage]. Enumerating them
+/// avoids `deleteAll()` blowing away unrelated secrets that other code paths
+/// may add later.
+const _ownedSecureKeys = <String>{_kPinKey};
+
+/// Hardened iOS/macOS keychain accessibility for the PIN: stay on this device
+/// only and require the device to have been unlocked at least once. Prevents
+/// the PIN from being silently restored to a different device through iCloud
+/// Keychain.
+const _iosOptions = IOSOptions(
+  accessibility: KeychainAccessibility.first_unlock_this_device,
+  synchronizable: false,
+);
+const _macosOptions = MacOsOptions(
+  accessibility: KeychainAccessibility.first_unlock_this_device,
+  synchronizable: false,
+);
 
 class AuthLocalDatasource {
   AuthLocalDatasource({
     FlutterSecureStorage? secureStorage,
+    PinHasher? pinHasher,
   }) : _secure = secureStorage ??
             const FlutterSecureStorage(
               aOptions: AndroidOptions(encryptedSharedPreferences: true),
-            );
+              iOptions: _iosOptions,
+              mOptions: _macosOptions,
+            ),
+        _hasher = pinHasher ?? const PinHasher();
 
   final FlutterSecureStorage _secure;
+  final PinHasher _hasher;
 
   // ── PIN ─────────────────────────────────────────────────────────────────
 
-  Future<void> savePin(String pin) => _secure.write(key: _kPinKey, value: pin);
+  /// Hashes [pin] with PBKDF2 and persists the encoded value.
+  Future<void> savePin(String pin) async {
+    final encoded = _hasher.hash(pin);
+    await _secure.write(key: _kPinKey, value: encoded);
+  }
 
   Future<String?> getPin() => _secure.read(key: _kPinKey);
 
   Future<bool> hasPin() async => (await _secure.read(key: _kPinKey)) != null;
 
-  Future<void> clearPin() => _secure.delete(key: _kPinKey);
+  Future<void> clearPin() async {
+    await _secure.delete(key: _kPinKey);
+    await _resetPinSecurityState();
+  }
 
-  Future<bool> verifyPin(String pin) async =>
-      (await _secure.read(key: _kPinKey)) == pin;
+  /// Verifies [pin] against the stored hash. If a legacy plaintext PIN is on
+  /// disk (created before PBKDF2 was introduced), it is accepted once and
+  /// transparently re-saved in hashed form.
+  Future<bool> verifyPin(String pin) async {
+    final stored = await _secure.read(key: _kPinKey);
+    if (stored == null) return false;
+    final ok = _hasher.verify(pin, stored);
+    if (ok && !_hasher.isHashed(stored)) {
+      await savePin(pin);
+    }
+    return ok;
+  }
+
+  // ── PIN brute-force protection (persistent) ─────────────────────────────
+
+  Future<int> getFailedPinAttempts() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_kPinFailedAttempts) ?? 0;
+  }
+
+  Future<void> setFailedPinAttempts(int value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_kPinFailedAttempts, value);
+  }
+
+  Future<int> getPinLockoutLevel() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_kPinLockoutLevel) ?? 0;
+  }
+
+  Future<void> setPinLockoutLevel(int value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_kPinLockoutLevel, value);
+  }
+
+  Future<DateTime?> getPinLockoutUntil() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ms = prefs.getInt(_kPinLockoutUntilMs);
+    if (ms == null || ms == 0) return null;
+    return DateTime.fromMillisecondsSinceEpoch(ms);
+  }
+
+  Future<void> setPinLockoutUntil(DateTime? value) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (value == null) {
+      await prefs.remove(_kPinLockoutUntilMs);
+    } else {
+      await prefs.setInt(_kPinLockoutUntilMs, value.millisecondsSinceEpoch);
+    }
+  }
+
+  Future<void> _resetPinSecurityState() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kPinFailedAttempts);
+    await prefs.remove(_kPinLockoutLevel);
+    await prefs.remove(_kPinLockoutUntilMs);
+  }
 
   // ── Onboarding ───────────────────────────────────────────────────────────
 
@@ -114,6 +204,8 @@ class AuthLocalDatasource {
   Future<void> clearAllData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-    await _secure.deleteAll();
+    for (final key in _ownedSecureKeys) {
+      await _secure.delete(key: key);
+    }
   }
 }

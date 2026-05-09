@@ -64,8 +64,13 @@ final budgetProgressListProvider =
   if (budgets.isEmpty) return [];
 
   final repo = ref.read(budgetRepositoryProvider);
+  final baseCurrency = ref.read(currencyCodeProvider).valueOrNull;
   final progressList = await Future.wait(
-    budgets.map((b) => repo.getBudgetProgress(budget: b, month: month)),
+    budgets.map((b) => repo.getBudgetProgress(
+          budget: b,
+          month: month,
+          baseCurrencyCode: baseCurrency,
+        )),
   );
 
   final symbol = ref.read(currencySymbolProvider).valueOrNull ?? '\$';
@@ -90,7 +95,12 @@ final overallBudgetProgressProvider =
     FutureProvider.autoDispose<BudgetProgress?>((ref) async {
   final month = ref.watch(budgetSelectedMonthProvider);
   final repo = ref.read(budgetRepositoryProvider);
+  final baseCurrency = ref.watch(currencyCodeProvider).valueOrNull;
   final overall = await repo.getOverallBudget(month);
   if (overall == null) return null;
-  return repo.getBudgetProgress(budget: overall, month: month);
+  return repo.getBudgetProgress(
+    budget: overall,
+    month: month,
+    baseCurrencyCode: baseCurrency,
+  );
 });

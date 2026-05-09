@@ -1,6 +1,7 @@
 import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
@@ -21,6 +22,9 @@ import 'features/transactions/domain/services/recurrence_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Open the database before runApp because every screen's build path reads
+  // from `isarProvider`. Everything else is deferred to a post-first-frame
+  // task so the splash renders as quickly as possible.
   final isar = await IsarService.open([
     TransactionModelSchema,
     CategoryModelSchema,
@@ -32,15 +36,6 @@ void main() async {
     SmsRawLogModelSchema,
   ]);
 
-  await RecurrenceService(isar).processRecurringTransactions();
-  await NotificationService.instance.initialize();
-
-  // Wire up the MethodChannel handler for banking notification detection.
-  final smsRepo = SmsRepository(isar);
-  // Prune stale dedup fingerprints (>90 days) to prevent unbounded DB growth.
-  unawaited(smsRepo.pruneOldFingerprints());
-  SmsIngestionService(isar, smsRepo).initialize();
-
   runApp(
     ProviderScope(
       overrides: [
@@ -49,4 +44,25 @@ void main() async {
       child: const App(),
     ),
   );
+
+  // After the first frame, run the background bootstrap that the user
+  // doesn't need to wait for: recurrence catch-up, notifications init, SMS
+  // wiring, and dedup-fingerprint pruning.
+  SchedulerBinding.instance.addPostFrameCallback((_) {
+    unawaited(_bootstrapBackground(isar));
+  });
+}
+
+Future<void> _bootstrapBackground(dynamic isar) async {
+  try {
+    await RecurrenceService(isar).processRecurringTransactions();
+  } catch (_) {/* swallow — non-fatal */}
+  try {
+    await NotificationService.instance.initialize();
+  } catch (_) {/* swallow — non-fatal */}
+  try {
+    final smsRepo = SmsRepository(isar);
+    unawaited(smsRepo.pruneOldFingerprints());
+    SmsIngestionService(isar, smsRepo).initialize();
+  } catch (_) {/* swallow — non-fatal */}
 }

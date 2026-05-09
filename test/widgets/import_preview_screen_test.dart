@@ -58,10 +58,11 @@ void main() {
       overrides: [importControllerProvider.overrideWith((ref) => controller)],
     );
 
-    expect(find.text('Import 0 rows'), findsOneWidget);
+    // Plural form is now wired through ARB: "No rows to import" / "Import 1 row".
+    expect(find.text('No rows to import'), findsOneWidget);
     await tester.tap(find.byType(CheckboxListTile));
     await tester.pump();
 
-    expect(find.text('Import 1 rows'), findsOneWidget);
+    expect(find.text('Import 1 row'), findsOneWidget);
   });
 }

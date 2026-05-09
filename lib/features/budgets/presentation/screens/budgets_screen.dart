@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/constants.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../../../auth/providers/auth_provider.dart';
 import '../../../transactions/data/models/category_model.dart';
 import '../../../transactions/domain/providers/transaction_providers.dart';
 import '../../data/models/budget_model.dart';
@@ -41,14 +42,17 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
       transactionListProvider,
       (_, __) async {
         final month = ref.read(budgetSelectedMonthProvider);
+        final baseCurrency = ref.read(currencyCodeProvider).valueOrNull;
         final progresses = await ref
             .read(budgetRepositoryProvider)
             .getBudgetsForMonth(month)
             .then((budgets) => Future.wait(
                   budgets.map(
-                    (b) => ref
-                        .read(budgetRepositoryProvider)
-                        .getBudgetProgress(budget: b, month: month),
+                    (b) => ref.read(budgetRepositoryProvider).getBudgetProgress(
+                          budget: b,
+                          month: month,
+                          baseCurrencyCode: baseCurrency,
+                        ),
                   ),
                 ));
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/database/isar_service.dart';
+import '../../../auth/providers/auth_provider.dart';
 import '../../data/models/account_model.dart';
 import '../../data/models/category_model.dart';
 import '../../data/models/transaction_model.dart';
@@ -213,8 +214,12 @@ final accountsProvider = StreamProvider<List<AccountModel>>((ref) async* {
 final accountBalanceProvider = StreamProvider.autoDispose
     .family<double, AccountModel>((ref, account) {
       final repo = ref.read(transactionRepositoryProvider);
+      final baseCurrency = ref.watch(currencyCodeProvider).valueOrNull;
       return repo
-          .watchTransactionDeltaForAccount(account.id)
+          .watchTransactionDeltaForAccount(
+            account.id,
+            baseCurrencyCode: baseCurrency,
+          )
           .map((delta) => account.initialBalance + delta);
     });
 
@@ -222,7 +227,11 @@ final accountBalanceProvider = StreamProvider.autoDispose
 final accountBalanceFutureProvider = FutureProvider.autoDispose
     .family<double, AccountModel>((ref, account) async {
       final repo = ref.read(transactionRepositoryProvider);
-      final delta = await repo.getTransactionDeltaForAccount(account.id);
+      final baseCurrency = ref.watch(currencyCodeProvider).valueOrNull;
+      final delta = await repo.getTransactionDeltaForAccount(
+        account.id,
+        baseCurrencyCode: baseCurrency,
+      );
       return account.initialBalance + delta;
     });
 
@@ -248,14 +257,20 @@ class AccountBalanceSnapshot {
 final accountBalanceSnapshotProvider = StreamProvider.autoDispose
     .family<AccountBalanceSnapshot, AccountModel>((ref, account) {
       final repo = ref.read(transactionRepositoryProvider);
-      return repo.watchTransactionDeltaForAccount(account.id).map((delta) {
-        final calculated = account.initialBalance + delta;
-        final actual = account.actualBalance ?? calculated;
-        return AccountBalanceSnapshot(
-          calculatedBalance: calculated,
-          actualBalance: actual,
-        );
-      });
+      final baseCurrency = ref.watch(currencyCodeProvider).valueOrNull;
+      return repo
+          .watchTransactionDeltaForAccount(
+            account.id,
+            baseCurrencyCode: baseCurrency,
+          )
+          .map((delta) {
+            final calculated = account.initialBalance + delta;
+            final actual = account.actualBalance ?? calculated;
+            return AccountBalanceSnapshot(
+              calculatedBalance: calculated,
+              actualBalance: actual,
+            );
+          });
     });
 
 class ReconciliationItem {
@@ -283,12 +298,16 @@ final reconciliationStateProvider =
     StreamProvider.autoDispose<ReconciliationState>((ref) {
       final accountRepo = ref.read(accountRepositoryProvider);
       final repo = ref.read(transactionRepositoryProvider);
+      final baseCurrency = ref.watch(currencyCodeProvider).valueOrNull;
       return accountRepo.watchAll().asyncMap((accounts) async {
         final pending = <ReconciliationItem>[];
         final history = <ReconciliationItem>[];
 
         for (final account in accounts) {
-          final delta = await repo.getTransactionDeltaForAccount(account.id);
+          final delta = await repo.getTransactionDeltaForAccount(
+            account.id,
+            baseCurrencyCode: baseCurrency,
+          );
           final calculated = account.initialBalance + delta;
           final actual = account.actualBalance ?? calculated;
           final item = ReconciliationItem(
@@ -344,9 +363,11 @@ class AccountReconciliationActions {
       note: note?.trim().isEmpty ?? true ? 'Balance adjustment' : note!.trim(),
       entryType: TransactionEntryType.adjustment,
     );
-    await repo.add(tx);
-
     account.actualBalance = targetBalance;
-    await accountRepo.update(account);
+
+    // Atomic: insert the adjustment row and stamp the account in one Isar
+    // writeTxn so a crash between the two writes can't leave the ledger in a
+    // half-applied state.
+    await repo.addWithAccountUpdate(transaction: tx, account: account);
   }
 }
