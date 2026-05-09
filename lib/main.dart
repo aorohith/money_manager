@@ -8,18 +8,37 @@ import 'package:money_manager/app.dart';
 import 'package:money_manager/core/database/isar_service.dart';
 import 'package:money_manager/core/notifications/notification_service.dart';
 import 'package:money_manager/core/sms/sms_ingestion_service.dart';
+import 'package:money_manager/features/budgets/data/models/budget_model.dart';
+import 'package:money_manager/features/goals/data/models/goal_model.dart';
+import 'package:money_manager/features/sms/data/models/sms_parsed_transaction.dart';
+import 'package:money_manager/features/sms/data/models/sms_raw_log_model.dart';
+import 'package:money_manager/features/sms/data/models/sms_rule_model.dart';
 import 'package:money_manager/features/sms/data/repositories/sms_repository.dart';
+import 'package:money_manager/features/transactions/data/models/account_model.dart';
+import 'package:money_manager/features/transactions/data/models/category_model.dart';
+import 'package:money_manager/features/transactions/data/models/transaction_model.dart';
 import 'package:money_manager/features/transactions/domain/services/recurrence_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Open Isar with no schemas for now; schemas are added in Sprint 3+
-  final isar = await IsarService.open(<CollectionSchema<dynamic>>[]);
+  final isar = await IsarService.open(<CollectionSchema<dynamic>>[
+    TransactionModelSchema,
+    CategoryModelSchema,
+    AccountModelSchema,
+    BudgetModelSchema,
+    GoalModelSchema,
+    SmsParsedTransactionSchema,
+    SmsRuleModelSchema,
+    SmsRawLogModelSchema,
+  ]);
 
   runApp(
-    const ProviderScope(
-      child: App(),
+    ProviderScope(
+      overrides: [
+        isarProvider.overrideWithValue(isar),
+      ],
+      child: const App(),
     ),
   );
 
@@ -31,7 +50,7 @@ Future<void> main() async {
   });
 }
 
-Future<void> _bootstrapBackground(dynamic isar) async {
+Future<void> _bootstrapBackground(Isar isar) async {
   try {
     await RecurrenceService(isar).processRecurringTransactions();
   } catch (_) {/* swallow — non-fatal */}
