@@ -144,6 +144,39 @@ void main() {
       expect(storedAcc.updatedAt, greaterThanOrEqualTo(storedTx.updatedAt));
     });
   });
+
+  group('date filters', () {
+    test('getAll includes rows exactly at lower bound timestamp', () async {
+      final start = DateTime(2026, 5, 1);
+      await isar.writeTxn(() async {
+        await isar.transactionModels.putAll([
+          TransactionModel(
+            amount: 100,
+            categoryId: 1,
+            accountId: 1,
+            date: start,
+            isIncome: false,
+          ),
+          TransactionModel(
+            amount: 200,
+            categoryId: 1,
+            accountId: 1,
+            date: start.add(const Duration(hours: 12)),
+            isIncome: false,
+          ),
+        ]);
+      });
+
+      final rows = await repo.getAll(
+        from: start,
+        to: start.add(const Duration(days: 1)),
+      );
+
+      expect(rows, hasLength(2),
+          reason:
+              'Day-scoped analytics must include transactions recorded exactly at 00:00.');
+    });
+  });
 }
 
 String _isarLibraryPath() {

@@ -138,7 +138,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
         .optional(isIncome != null, (q) => q.isIncomeEqualTo(isIncome!))
         .optional(categoryId != null, (q) => q.categoryIdEqualTo(categoryId!))
         .optional(accountId != null, (q) => q.accountIdEqualTo(accountId!))
-        .optional(from != null, (q) => q.dateGreaterThan(from!))
+        .optional(from != null, (q) => q.dateGreaterThan(from!, include: true))
         .optional(to != null, (q) => q.dateLessThan(to!))
         .sortByDateDesc()
         .limit(limit)
@@ -162,7 +162,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
         .optional(isIncome != null, (q) => q.isIncomeEqualTo(isIncome!))
         .optional(categoryId != null, (q) => q.categoryIdEqualTo(categoryId!))
         .optional(accountId != null, (q) => q.accountIdEqualTo(accountId!))
-        .optional(from != null, (q) => q.dateGreaterThan(from!))
+        .optional(from != null, (q) => q.dateGreaterThan(from!, include: true))
         .optional(to != null, (q) => q.dateLessThan(to!))
         .optional(
           searchNote != null && searchNote.isNotEmpty,
@@ -190,7 +190,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
         .optional(isIncome != null, (q) => q.isIncomeEqualTo(isIncome!))
         .optional(categoryId != null, (q) => q.categoryIdEqualTo(categoryId!))
         .optional(accountId != null, (q) => q.accountIdEqualTo(accountId!))
-        .optional(from != null, (q) => q.dateGreaterThan(from!))
+        .optional(from != null, (q) => q.dateGreaterThan(from!, include: true))
         .optional(to != null, (q) => q.dateLessThan(to!))
         .count();
   }

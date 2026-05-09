@@ -1,0 +1,29 @@
+# Date Range Boundary Safety
+
+When filtering records by a `[from, to)` date range, include the lower
+bound and exclude the upper bound unless product requirements say
+otherwise.
+
+## Mistake we hit
+
+- **Mistake:** day-wise analytics dropped expenses recorded exactly at
+  `00:00`.
+- **Root cause:** repository filters used an exclusive lower bound
+  (`dateGreaterThan(from)`) instead of inclusive lower bound.
+
+## Required recipe
+
+- For `from`, use an inclusive comparison (e.g. Isar:
+  `dateGreaterThan(from, include: true)`).
+- For `to`, keep an exclusive comparison (e.g. Isar:
+  `dateLessThan(to)`).
+- Treat the range as `[from, to)` so adjacent periods do not double
+  count rows.
+
+## Mandatory regression test
+
+- Add a repository-level test that inserts at least one row exactly at
+  `from` (midnight) and one later in the same period.
+- Query using `from` and next-day `to`.
+- Assert both rows are returned, with a failure reason stating boundary
+  inclusion is required for day-wise analytics.
