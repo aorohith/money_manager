@@ -1,0 +1,117 @@
+---
+description: Flutter-specific recipes that implement variable-content-layout-safety
+globs: lib/**/*.dart, test/**/*.dart
+alwaysApply: true
+---
+
+# Flutter Overflow Safety (Stack-Specific Recipes)
+
+This rule is the Flutter implementation of the universal principles in
+`variable-content-layout-safety.mdc`. Read that rule first; the
+"why" lives there.
+
+## Modal bottom sheet with a list
+
+Use this exact recipe for any `showModalBottomSheet` that contains a
+data-driven list:
+
+1. `showModalBottomSheet(isScrollControlled: true, useSafeArea: true,
+   showDragHandle: true, ...)`.
+2. Cap the modal: `constraints: BoxConstraints(maxHeight:
+   MediaQuery.sizeOf(context).height * 0.85)`.
+3. **Always wrap the builder body in `LayoutBuilder`.** Never trust
+   the outer `MediaQuery.height * X` to be the actual usable height —
+   the modal subtracts the drag handle (~22 px) and bottom safe-area
+   inset (~30 px on Android), so a column built to the parent's height
+   overflows by exactly that delta.
+4. Inside `LayoutBuilder`, use `SizedBox(height: constraints.maxHeight)`
+   + `Column(MainAxisSize.max)`:
+   - fixed header (title) at the top,
+   - `Expanded` around the scrollable list,
+   - fixed CTA(s) at the bottom.
+5. The scrollable list gets a stable `Key` so widget tests can drive
+   it. Drop `shrinkWrap: true` when the list is inside `Expanded` (it
+   already gets bounded constraints).
+6. Do NOT add an inner `SafeArea` — `useSafeArea: true` already does
+   it; stacking them double-counts the bottom inset.
+7. Do NOT cap the list with a hard-coded `ConstrainedBox(maxHeight:
+   screen * 0.5)` — combined with the sheet's title + CTA it overshoots
+   the modal cap.
+
+```dart
+showModalBottomSheet(
+  isScrollControlled: true,
+  useSafeArea: true,
+  showDragHandle: true,
+  constraints: BoxConstraints(
+    maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+  ),
+  builder: (ctx) => LayoutBuilder(
+    builder: (ctx, constraints) => SizedBox(
+      height: constraints.maxHeight,
+      child: Column(
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          Text('Title'),
+          const SizedBox(height: 16),
+          Expanded(
+            child: ListView.separated(
+              key: const Key('my_list'),
+              itemCount: items.length,
+              ...
+            ),
+          ),
+          FilledButton(onPressed: ..., child: const Text('Action')),
+        ],
+      ),
+    ),
+  ),
+);
+```
+
+## Other variable-length surfaces
+
+- Inside any `Column`, wrap dynamic-height children in `Flexible` /
+  `Expanded` so they share remaining space instead of forcing overflow.
+- Long horizontal text uses `Expanded` + `maxLines: 1` +
+  `TextOverflow.ellipsis`.
+- Scroll views inside scrollables: prefer `SliverList` over a nested
+  `ListView`; if you must nest, use `shrinkWrap: true` +
+  `physics: ClampingScrollPhysics()`.
+- Pills / tiles with an icon + text Column: the Column must be wrapped
+  in `Expanded` so its text can ellipsise instead of pushing the row
+  past its parent.
+
+## Mandatory widget regression test
+
+```dart
+for (final size in const [
+  Size(360, 640), // small Android
+  Size(390, 720), // standard iOS-class phone
+  Size(412, 540), // short height — exposes drag-handle / safe-area math
+]) {
+  testWidgets('list scrolls without overflow @ ${size.width}x${size.height}',
+      (tester) async {
+    await tester.binding.setSurfaceSize(size);
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpApp(MyScreen(), overrides: [...]);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull,
+        reason: 'initial render must not overflow');
+
+    await tester.tap(find.byKey(const Key('open_sheet')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull,
+        reason: 'sheet must not overflow');
+
+    await tester.drag(
+      find.byKey(const Key('my_list')),
+      const Offset(0, -2000),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Item 25'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+}
+```

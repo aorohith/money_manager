@@ -13,8 +13,8 @@ import '../../../goals/data/models/goal_model.dart';
 import '../../../goals/domain/providers/goal_providers.dart';
 import '../../../insights/domain/providers/insights_providers.dart';
 import '../../../sms/domain/providers/sms_providers.dart';
+import '../../../transactions/data/models/category_model.dart';
 import '../../../transactions/presentation/widgets/add_transaction_sheet.dart';
-import '../../../transactions/presentation/widgets/transaction_tile.dart';
 import '../../domain/models/home_section.dart';
 import '../../domain/providers/dashboard_providers.dart';
 import '../../domain/providers/home_layout_provider.dart';
@@ -85,9 +85,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: AppSpacing.md),
-                  // Balance card is the headline of the dashboard and is
-                  // intentionally not user-toggleable.
-                  const BalanceCard(),
+                  // The period filter sits above the balance card because
+                  // it scopes every dashboard query (income, expenses,
+                  // category breakdown, etc.). Hidden via Settings → Home.
+                  if (enabledSections.contains(HomeSection.periodSelector)) ...[
+                    const _PeriodFilterSection(),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
+                  // Compact balance chip expands the detailed card on tap.
+                  const DashboardBalanceSection(),
                   ..._buildOptionalSections(enabledSections),
                   const SizedBox(height: 100),
                 ],
@@ -123,14 +129,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     for (final section in HomeSection.values) {
       if (!enabled.contains(section)) continue;
       final widget = switch (section) {
+        // Period selector is rendered above the balance card, not as part
+        // of the optional list (skip it here to avoid duplication).
+        HomeSection.periodSelector => null,
         HomeSection.quickStats => _QuickStatsRow(),
         HomeSection.smsBanner => _SmsDetectionBanner(),
         HomeSection.insightsSummary => _InsightsSummaryCard(),
         HomeSection.spendingRing => const SpendingRing(),
         HomeSection.budgetHealth => _BudgetHealthBanner(),
         HomeSection.goals => _GoalsSection(),
-        HomeSection.recentTransactions => _RecentTransactionsSection(),
+        HomeSection.categorySpending => _CategorySpendingSection(),
       };
+      if (widget == null) continue;
       widgets.add(spaced(widget));
     }
     return widgets;
@@ -434,12 +444,136 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// ── Recent Transactions ───────────────────────────────────────────────────────
+// ── Period Filter ─────────────────────────────────────────────────────────────
 
-class _RecentTransactionsSection extends ConsumerWidget {
+/// Segmented Day / Week / Month / Year selector that drives every
+/// dashboard query through [dashboardPeriodProvider]. Visual style is
+/// intentionally aligned with the analytics screen's `PeriodSelector` so
+/// users see the same control across both surfaces.
+class _PeriodFilterSection extends ConsumerWidget {
+  const _PeriodFilterSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selected = ref.watch(dashboardPeriodProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      key: const Key('home_period_filter'),
+      height: 40,
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        border: Border.all(
+          color: isDark ? AppColors.outlineDark : AppColors.outline,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: HomePeriod.values.map((p) {
+          final isSelected = p == selected;
+          return Expanded(
+            child: GestureDetector(
+              key: Key('home_period_${p.name}'),
+              onTap: () {
+                HapticFeedback.lightImpact();
+                ref.read(dashboardPeriodProvider.notifier).state = p;
+              },
+              child: AnimatedContainer(
+                duration: AppDurations.fast,
+                margin: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? (isDark ? AppColors.brandLight : AppColors.brand)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  _label(p),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected
+                        ? Colors.white
+                        : (isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondary),
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  String _label(HomePeriod p) => switch (p) {
+        HomePeriod.day => 'Day',
+        HomePeriod.week => 'Week',
+        HomePeriod.month => 'Month',
+        HomePeriod.year => 'Year',
+      };
+}
+
+// ── Category Spending ─────────────────────────────────────────────────────────
+
+/// Shapes the dashboard data into the rows rendered by
+/// [_CategorySpendingSection]. Exposed at top-level so the logic can be
+/// unit-tested without pumping the whole dashboard widget tree.
+@visibleForTesting
+List<CategorySpendEntry> buildCategorySpendEntries(
+  DashboardData data, {
+  int maxRows = 5,
+}) {
+  if (data.totalExpense <= 0) return const [];
+  final byId = {for (final c in data.categories) c.id: c};
+  final entries = <CategorySpendEntry>[];
+  for (final mapEntry in data.categoryExpenseSummary.entries) {
+    final amount = mapEntry.value;
+    if (amount <= 0) continue;
+    final cat = byId[mapEntry.key];
+    if (cat == null) continue;
+    entries.add(
+      CategorySpendEntry(
+        category: cat,
+        amount: amount,
+        fraction: amount / data.totalExpense,
+      ),
+    );
+  }
+  entries.sort((a, b) => b.amount.compareTo(a.amount));
+  if (entries.length > maxRows) entries.length = maxRows;
+  return entries;
+}
+
+@visibleForTesting
+class CategorySpendEntry {
+  const CategorySpendEntry({
+    required this.category,
+    required this.amount,
+    required this.fraction,
+  });
+
+  final CategoryModel category;
+  final double amount;
+  final double fraction;
+}
+
+/// Shows expense totals grouped by category for the selected dashboard
+/// period. Replaces the previous "Recent transactions" section so the
+/// home screen surfaces *where* money went rather than a raw ledger.
+class _CategorySpendingSection extends ConsumerWidget {
+  static const _maxRows = 5;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(dashboardProvider);
+    final symbol = ref.watch(currencySymbolProvider).valueOrNull ?? '\$';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
@@ -452,7 +586,7 @@ class _RecentTransactionsSection extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Recent Transactions',
+                'Category spending',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: isDark
@@ -462,8 +596,8 @@ class _RecentTransactionsSection extends ConsumerWidget {
                     ),
               ),
               TextButton(
-                // Navigate to the full Transactions screen.
-                onPressed: () => context.go(AppRoutes.transactions),
+                // Open the analytics screen which has the full breakdown.
+                onPressed: () => context.go(AppRoutes.analytics),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.brand,
                   padding: const EdgeInsets.symmetric(
@@ -495,23 +629,28 @@ class _RecentTransactionsSection extends ConsumerWidget {
         const SizedBox(height: AppSpacing.sm),
         data.when(
           data: (d) {
-            if (d.recentTransactions.isEmpty) {
+            final entries = buildCategorySpendEntries(d, maxRows: _maxRows);
+            if (entries.isEmpty) {
               return Padding(
                 padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.screenPadding),
                 child: EmptyState(
-                  icon: Icons.receipt_long_outlined,
-                  title: 'No transactions yet',
-                  subtitle: 'Tap Add to record your first transaction.',
+                  icon: Icons.donut_small_outlined,
+                  title: 'No spending yet',
+                  subtitle:
+                      'Add an expense and you\'ll see your top categories here.',
                 ),
               );
             }
             return Column(
               children: [
-                for (int i = 0; i < d.recentTransactions.length; i++)
+                for (int i = 0; i < entries.length; i++)
                   _StaggeredTile(
                     index: i,
-                    child: _buildTile(ref, d, i),
+                    child: _CategorySpendingRow(
+                      entry: entries[i],
+                      currencySymbol: symbol,
+                    ),
                   ),
               ],
             );
@@ -526,7 +665,7 @@ class _RecentTransactionsSection extends ConsumerWidget {
                   padding: EdgeInsets.only(bottom: AppSpacing.sm),
                   child: ShimmerBox(
                       width: double.infinity,
-                      height: 68,
+                      height: 64,
                       borderRadius: 14),
                 ),
               ),
@@ -537,16 +676,139 @@ class _RecentTransactionsSection extends ConsumerWidget {
       ],
     );
   }
+}
 
-  Widget _buildTile(WidgetRef ref, DashboardData d, int i) {
-    final tx = d.recentTransactions[i];
-    final cat = d.categories.where((c) => c.id == tx.categoryId).firstOrNull;
-    final symbol = ref.read(currencySymbolProvider).valueOrNull ?? '\$';
-    return TransactionTile(
-      transaction: tx,
-      category: cat,
-      currencySymbol: symbol,
+class _CategorySpendingRow extends StatelessWidget {
+  const _CategorySpendingRow({
+    required this.entry,
+    required this.currencySymbol,
+  });
+
+  final CategorySpendEntry entry;
+  final String currencySymbol;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = entry.category.color;
+
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: AppSpacing.screenPadding,
+        right: AppSpacing.screenPadding,
+        bottom: AppSpacing.sm,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.go(AppRoutes.analytics),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surfaceDark : AppColors.surface,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+              border: Border.all(
+                color: isDark ? AppColors.outlineDark : AppColors.outline,
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm + 4,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: color.withAlpha(22),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                  ),
+                  child: Icon(entry.category.icon, size: 18, color: color),
+                ),
+                const SizedBox(width: AppSpacing.sm + 2),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              entry.category.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark
+                                        ? AppColors.textPrimaryDark
+                                        : AppColors.textPrimary,
+                                  ),
+                            ),
+                          ),
+                          Text(
+                            '$currencySymbol${_fmt(entry.amount)}',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark
+                                      ? AppColors.textPrimaryDark
+                                      : AppColors.textPrimary,
+                                ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                  AppSpacing.radiusFull),
+                              child: LinearProgressIndicator(
+                                value: entry.fraction.clamp(0.0, 1.0),
+                                backgroundColor: isDark
+                                    ? AppColors.outlineDark
+                                    : AppColors.outline,
+                                valueColor: AlwaysStoppedAnimation(color),
+                                minHeight: 5,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(
+                            '${(entry.fraction * 100).toStringAsFixed(0)}%',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  color: isDark
+                                      ? AppColors.textSecondaryDark
+                                      : AppColors.textSecondary,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
+  }
+
+  String _fmt(double v) {
+    if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(1)}M';
+    if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}K';
+    return v.toStringAsFixed(2);
   }
 }
 

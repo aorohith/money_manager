@@ -7,8 +7,8 @@ import '../../domain/models/home_section.dart';
 import '../../domain/providers/home_layout_provider.dart';
 
 /// Settings screen that lets the user customise which dashboard sections
-/// appear on Home. The [BalanceCard] is always rendered and is therefore
-/// not listed here.
+/// appear on Home. The compact total balance chip and expandable balance
+/// card are always shown and are therefore not listed here.
 class HomeLayoutScreen extends ConsumerWidget {
   const HomeLayoutScreen({super.key});
 
@@ -123,7 +123,9 @@ class _AlwaysOnTile extends StatelessWidget {
       child: ListTile(
         leading: const Icon(Icons.account_balance_rounded),
         title: const Text('Balance card'),
-        subtitle: const Text('Always shown — your total across accounts.'),
+        subtitle: const Text(
+          'Always shown — tap the chip for details and period breakdown.',
+        ),
         trailing: Icon(
           Icons.lock_outline_rounded,
           color: Theme.of(context).colorScheme.onSurfaceVariant,

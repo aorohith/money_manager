@@ -1,0 +1,80 @@
+---
+description: Framework-agnostic principles for laying out variable-length content (lists, sheets, dialogs) without overflow
+alwaysApply: true
+---
+
+# Variable-Content Layout Safety (Framework-Agnostic)
+
+Whenever a UI surface renders a collection or content whose size depends
+on remote/user data (lists, modals, sheets, dialogs, dropdowns, etc.),
+the layout MUST be safe for the **largest plausible payload** on the
+**smallest plausible viewport** — not just the happy path.
+
+This rule is portable across every UI stack (Flutter, React/RN, SwiftUI,
+Compose, web). For framework-specific recipes, see the sibling
+`*-overflow-safety.mdc` rule for that stack.
+
+## Universal principles
+
+1. **Bound the container, scroll the content.** A modal/sheet/dialog
+   always has an explicit max height (e.g. `0.85 × viewport`). The
+   *list* inside it scrolls; the *container* never grows beyond its cap.
+2. **Read the real available height, not the parent viewport.** Drag
+   handles, headers, safe-area insets, and keyboards consume vertical
+   space *inside* the container. Use the framework's
+   "constraints from parent" primitive (Flutter `LayoutBuilder`, React
+   `useLayoutEffect`/`onLayout`, SwiftUI `GeometryReader`, web
+   `ResizeObserver`) — never compute height from `window.height * X`.
+3. **Three-zone layout for sheets:** fixed header / scrollable body /
+   fixed footer (CTA). The body fills exactly the leftover space; never
+   let the footer be pushed off-screen by long content.
+4. **Never double-apply safe-area / insets.** Pick one layer to handle
+   them. Stacking two `SafeArea`-equivalents double-counts the bottom
+   inset and shows up as a small overflow (the exact size of the inset).
+5. **Ellipsise long text by default.** Any text rendered alongside a
+   sibling that can grow (icon row, badge, value) must declare its
+   overflow behaviour (`maxLines: 1` + ellipsis equivalent).
+6. **Stable test selectors.** Every scrollable list gets a stable
+   identifier (key/testID/accessibility id) so the regression test
+   below can scroll it deterministically.
+
+## Mandatory regression tests
+
+For every list/sheet/dialog whose item count is data-driven, add a
+test that:
+
+1. **Iterates over multiple viewport sizes** — at minimum a small
+   phone, a standard phone, and a **short-height** case. The
+   short-height case is non-negotiable — it's where drag-handle /
+   safe-area math goes wrong.
+2. Renders the surface with **at least 20 items** so the list MUST
+   scroll. Empty/happy-path-only tests do not count.
+3. Asserts no layout exception (`tester.takeException()` /
+   console-error spy / `LayoutOverflowError` listener) after **every**
+   state transition: initial render → open → settle. Each assertion
+   carries a `reason` so the next agent localises failures fast.
+4. Drives the scroll and asserts an off-screen item becomes visible.
+   Proves scrolling works, not just that the build succeeded.
+
+## Anti-patterns (across every framework)
+
+- Hard-coded inner cap like `maxHeight: viewport * 0.5` inside a
+  container that already has its own cap — the two combine and overshoot.
+- `Column/VStack(min)` containing a flex child that wraps content of
+  unknown size with no upper bound — the flex child happily grows past
+  the container.
+- Trusting the *parent* viewport size for sizing the *child* sheet body.
+- One regression test that only covers the happy path or a single
+  viewport size.
+
+## Porting note
+
+Each UI stack has its own primitives for these principles. When you
+add a stack-specific rule, follow this naming pattern:
+
+- `flutter-overflow-safety.mdc`
+- `react-overflow-safety.mdc`
+- `swiftui-overflow-safety.mdc`
+
+Each stack rule maps the universal principles above to its own
+`Expanded` / `flex` / `LazyVStack` / etc. primitives.

@@ -1,15 +1,51 @@
 ---
-description: Mandatory test coverage and verification for new features and UI changes
+description: Mandatory test coverage and verification for new features and behaviour changes
 alwaysApply: true
 ---
 
 # Mandatory Testing For Feature Changes
 
-- For any new feature, UI addition, or behavioral change, add or update test cases that cover:
-  - Happy path behavior
-  - Relevant edge/error states
-  - Regression risk for touched flows
-- Run all newly added or updated tests and confirm they pass before completing work.
-- If the change affects dependent features/modules, run tests for those dependent areas too.
-- Do not mark work complete until required tests are implemented and verified as passing.
-- If test execution is blocked (environment/tooling), clearly report what was attempted, what failed, and exact commands needed to verify.
+This rule is **framework-agnostic**. Apply the spirit of each bullet
+using whichever test runner your project uses (Jest, Vitest, Pytest,
+flutter_test, XCTest, JUnit, Go test, etc.).
+
+## What to test
+
+For any new feature, UI addition, or behavioural change, add or update
+tests that cover:
+
+- **Happy path** — the primary user-facing behaviour.
+- **Edge / error states** — empty input, large input, error paths,
+  boundary values, async failures.
+- **Regression risk** — anything else the touched flow could break.
+  If you changed a shared util/component, write at least one test for
+  every direct caller you can identify.
+
+## Verification before declaring done
+
+- Run all newly added or updated tests and confirm they pass.
+- Run tests for any dependent module/feature you touched indirectly
+  (don't rely on CI to find your breakage).
+- Run a static analyser / linter / type-checker pass too if the
+  project has one (e.g. `dart analyze`, `tsc --noEmit`, `mypy`,
+  `cargo check`).
+
+## When you can't run tests locally
+
+If test execution is blocked by environment or tooling, your final
+message MUST clearly state:
+
+1. What you attempted.
+2. What failed (exact error or symptom).
+3. The exact commands the user (or CI) needs to run to verify.
+
+Never silently mark work complete with unverified tests.
+
+## Definition of done
+
+Work is not done until:
+
+- [ ] Tests for the new behaviour exist and pass.
+- [ ] Tests for at least one realistic edge case exist and pass.
+- [ ] Tests for affected dependent areas exist and pass.
+- [ ] Static analysis / lints are clean for the touched files.

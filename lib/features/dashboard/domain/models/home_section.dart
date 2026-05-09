@@ -6,6 +6,14 @@ import 'package:flutter/material.dart';
 /// The `id` is a stable string serialised to disk so that reordering this
 /// enum (or renaming a member) never silently corrupts persisted preferences.
 enum HomeSection {
+  periodSelector(
+    id: 'period_selector',
+    label: 'Period filter',
+    description:
+        'Day, week, month, or year filter that drives the dashboard.',
+    icon: Icons.calendar_month_rounded,
+    defaultEnabled: true,
+  ),
   quickStats(
     id: 'quick_stats',
     label: 'Quick stats',
@@ -49,11 +57,13 @@ enum HomeSection {
     icon: Icons.flag_rounded,
     defaultEnabled: false,
   ),
-  recentTransactions(
+  categorySpending(
+    // Stable persisted id retained so previously customised layouts
+    // continue to honour the user's enable/disable choice.
     id: 'recent_transactions',
-    label: 'Recent transactions',
-    description: 'The latest few entries in your ledger.',
-    icon: Icons.receipt_long_rounded,
+    label: 'Category spending',
+    description: 'How much you spent in each category this period.',
+    icon: Icons.donut_small_rounded,
     defaultEnabled: true,
   );
 

@@ -42,14 +42,14 @@ void main() {
       final repo = HomeLayoutRepository();
       await repo.saveEnabledSections({
         HomeSection.insightsSummary,
-        HomeSection.recentTransactions,
+        HomeSection.categorySpending,
       });
       final prefs = await SharedPreferences.getInstance();
       expect(
         prefs.getStringList('home_layout_enabled_ids'),
         containsAll(<String>[
           HomeSection.insightsSummary.id,
-          HomeSection.recentTransactions.id,
+          HomeSection.categorySpending.id,
         ]),
       );
       expect(prefs.getBool('home_layout_customised'), isTrue);

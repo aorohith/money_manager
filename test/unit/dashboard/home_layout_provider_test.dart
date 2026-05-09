@@ -48,26 +48,26 @@ void main() {
 
       await container
           .read(homeLayoutProvider.notifier)
-          .setEnabled(HomeSection.recentTransactions, false);
+          .setEnabled(HomeSection.categorySpending, false);
 
       expect(
         container.read(homeLayoutProvider).valueOrNull,
-        isNot(contains(HomeSection.recentTransactions)),
+        isNot(contains(HomeSection.categorySpending)),
       );
 
       final reloaded = await HomeLayoutRepository().getEnabledSections();
-      expect(reloaded, isNot(contains(HomeSection.recentTransactions)));
+      expect(reloaded, isNot(contains(HomeSection.categorySpending)));
     });
 
     test('setEnabled is a no-op when state would not change', () async {
       final container = makeContainer();
       await container.read(homeLayoutProvider.future);
-      // recentTransactions is on by default.
+      // categorySpending is on by default.
       final before = container.read(homeLayoutProvider).valueOrNull;
 
       await container
           .read(homeLayoutProvider.notifier)
-          .setEnabled(HomeSection.recentTransactions, true);
+          .setEnabled(HomeSection.categorySpending, true);
 
       final after = container.read(homeLayoutProvider).valueOrNull;
       expect(after, equals(before));

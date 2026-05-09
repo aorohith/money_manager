@@ -1,0 +1,168 @@
+---
+description: Capture every mistake as a rule (learn) and prune every stale or wrong rule (unlearn) so the rulebook stays sharp
+alwaysApply: true
+---
+
+# Learn & Unlearn — Keep the Rulebook Sharp
+
+The rulebook is a living artifact. It grows when we discover something
+new (**learn**) and it shrinks when something we believed turns out to
+be wrong, stale, or counter-productive (**unlearn**). Both directions
+are mandatory — a rulebook that only grows becomes noise, and a
+rulebook that never absorbs lessons keeps shipping the same bugs.
+
+Treat every fix as **two** deliverables: the code change AND the
+corresponding rulebook delta.
+
+---
+
+## PART A — Learn: capture every mistake as a rule
+
+### When this fires
+
+After ANY of the following, you MUST update the rulebook before
+declaring the task done:
+
+- The user reports a bug, crash, overflow, regression, or incorrect
+  behaviour in code you touched.
+- A test fails for a reason you didn't anticipate (off-by-one, wrong
+  viewport, missing override, race condition, etc.).
+- You find a latent bug while investigating something else.
+- A code review (human or CI) flags an issue you should have caught.
+- You realise a previous "fix" was wrong, incomplete, or papered over
+  the real cause.
+
+### What "updating the rulebook" means
+
+Pick the smallest correct action — in priority order:
+
+1. **Extend an existing rule** in `.cursor/rules/` if a related rule
+   already exists. Add a new section, a new bullet, or a clarifying
+   example. Prefer this over making a new file.
+2. **Create a new rule** at `.cursor/rules/<topic>.mdc` (kebab-case)
+   when no existing rule covers the area. Follow `create-rule` SKILL
+   conventions: YAML frontmatter, < 50 lines if possible, one concern
+   per rule, concrete code examples.
+3. **Strengthen the test** that should have caught the bug. The fix
+   isn't complete until the regression test would have failed against
+   the old code. State this explicitly in your summary.
+
+### Prefer portable rules
+
+When the lesson is language- or framework-agnostic (process, testing
+discipline, layout principles, error handling, naming, etc.), write
+it as a portable rule with no project-specific paths or APIs. Stack-
+specific recipes go in a sibling `<stack>-<topic>.mdc` rule that
+references the portable principle. See `variable-content-layout-
+safety.mdc` (portable) and `flutter-overflow-safety.mdc` (Flutter
+recipe) for the pattern. Every rule you write should be reusable in
+your next project — only the stack-specific recipe should need
+swapping.
+
+### What a rule entry must contain
+
+- **The specific mistake** (one sentence — what went wrong).
+- **The root cause** (why it happened — usually a wrong assumption).
+- **The exact recipe to avoid it** (do/don't, with code).
+- **The test pattern that catches it** (so future code can't regress).
+
+### Example (learn)
+
+> **Mistake:** modal sheet overflowed by 79 px on a phone.
+> **Root cause:** I sized the column with `MediaQuery.height * 0.85`
+> from the parent context, ignoring the drag handle and bottom safe-
+> area inset that the modal itself eats.
+> **Fix recipe:** always use `LayoutBuilder` inside the sheet builder
+> and size the body to `constraints.maxHeight`.
+> **Regression test:** loop `testWidgets` over multiple viewport
+> sizes including a short-height case; assert `tester.takeException()
+> == null` after each state transition.
+
+---
+
+## PART B — Unlearn: prune every stale or wrong rule
+
+A rule that no longer reflects reality is worse than no rule — it
+costs the agent attention on every turn AND points at a bad pattern.
+Be just as eager to remove or rewrite rules as you are to add them.
+
+### When this fires
+
+After ANY of the following, you MUST revise or delete the offending
+rule(s) in the same task:
+
+- A rule's recipe is now obsolete (framework upgrade, library API
+  change, deprecated primitive).
+- A rule contradicts a newer, better rule you've just written.
+- A rule was based on an incorrect assumption that you've since
+  disproved.
+- A rule keeps being misapplied because it's too vague or too broad.
+- A rule has not prevented a single real bug in the period it has
+  been active, AND it generates friction (false positives, churn,
+  noisy lints).
+- A rule is duplicated by another rule. Pick the better one and
+  delete the rest.
+- A rule's stack-specific recipe is irrelevant to this project (e.g.
+  you copied the rulebook to a non-Flutter project — delete
+  `flutter-*.mdc` recipes).
+
+### What "unlearning" means
+
+Pick the smallest correct action — in priority order:
+
+1. **Narrow the rule.** Tighten the wording, add an "Applies when"
+   clause, restrict the `globs:` frontmatter so it stops firing in
+   the wrong contexts.
+2. **Rewrite the rule.** Replace the bad recipe with the correct one
+   and add a one-line "Why we changed this" note inside the rule
+   body so future readers know it was deliberate.
+3. **Supersede the rule.** Create the replacement rule, then delete
+   the old one in the same commit. Don't leave the stale rule lying
+   around marked "deprecated" — agents will still read it.
+4. **Delete the rule outright.** If the rule no longer serves the
+   project, just remove the file. Note the deletion in your task
+   summary.
+
+### What an unlearn entry must contain
+
+When you remove or rewrite a rule, the task summary MUST include:
+
+- **What rule(s) you changed or deleted** (file paths).
+- **Why it was wrong / stale** (one sentence — what we used to
+  believe, what we now know).
+- **What replaces it** (link to the new rule, or "no replacement
+  needed because…").
+
+### Example (unlearn)
+
+> **Removed:** `.cursor/rules/old-modal-pattern.mdc`.
+> **Why stale:** advised wrapping every sheet body in `Padding +
+> Column(min) + Flexible`. We learned this overflows by drag-handle
+> + safe-area on short screens.
+> **Replacement:** the `LayoutBuilder + Column(max) + Expanded`
+> recipe in `flutter-overflow-safety.mdc`.
+
+---
+
+## Don'ts (apply to both directions)
+
+- Do NOT silently fix a bug without recording the lesson — the next
+  agent (or future you) WILL repeat it.
+- Do NOT bury the lesson in a code comment alone. Comments are
+  invisible to agents working on a different file.
+- Do NOT write a vague rule like "be careful with bottom sheets" —
+  rules must be actionable and testable.
+- Do NOT skip the regression test. A rule without a test is a
+  suggestion; a test is enforcement.
+- Do NOT mark old rules "deprecated" and leave them in the folder.
+  Either delete them or rewrite them in place.
+- Do NOT keep two rules that say almost the same thing. Merge them
+  and delete the loser.
+
+## Reporting
+
+When you finish a task that triggered either direction, your summary
+MUST include a section titled **"What I learned / unlearned"** that:
+
+- Names every file you added, edited, or deleted in `.cursor/rules/`.
+- One-line summarises each lesson learned and each belief unlearned.
