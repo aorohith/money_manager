@@ -1,0 +1,24 @@
+---
+description: Prevent Flutter PDF export failures from unsupported glyphs and default page caps
+globs: lib/**/*.dart
+alwaysApply: false
+---
+
+# Flutter PDF Export Unicode Safety
+
+## Mistake
+Using `pdf` package default Helvetica and default `MultiPage` settings caused export failures for `₹` and large ledgers.
+
+## Root Cause
+- Built-in Helvetica in `dart_pdf` does not support Unicode currency/emoji glyphs.
+- `pw.MultiPage` defaults to a low max page count, which throws `TooManyPagesException` for long reports.
+
+## Required Recipe
+- Always embed a Unicode-capable font (e.g. Noto Sans) from app assets and set it via `pw.ThemeData.withFont`.
+- Load font bytes on the main isolate and pass bytes into `compute` args; do not read `rootBundle` inside isolate entrypoints.
+- Set an explicit `maxPages` suitable for ledger exports.
+- Sanitize free-form text (notes/category labels) to remove unsupported astral-plane glyphs when no emoji fallback font is bundled.
+
+## Regression Test Pattern
+- Add/keep a test that exports rows containing `₹` and high row counts, asserting no throw from PDF build path.
+- Include at least one row with emoji-like input in note/category and verify export still completes.

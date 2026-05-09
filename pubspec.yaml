@@ -77,5 +77,6 @@ flutter:
   assets:
     - assets/animations/
     - assets/images/
+    - assets/fonts/
 
   # Fonts served by google_fonts package at runtime — no local font assets needed.
