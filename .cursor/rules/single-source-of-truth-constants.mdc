@@ -1,0 +1,74 @@
+---
+description: Centralise tunables that appear in more than one surface; never duplicate them across screens.
+globs:
+alwaysApply: true
+---
+
+# Single Source of Truth for Cross-Surface Constants
+
+## The mistake this prevents
+
+Changing the app PIN from 6 to 4 digits required edits in **three**
+files (`pin_setup_screen.dart`, `pin_lock_screen.dart`,
+`change_pin_sheet.dart`) — each redeclared its own `_pinLength = 6`,
+its own `LengthLimitingTextInputFormatter(6)`, and its own "6-digit
+PIN" copy. Forgetting any one of them yields a silent, asymmetric
+UX where setup accepts 4 digits but Change-PIN demands 6.
+
+## Root cause
+
+A configuration value (PIN length, max attempts, lockout window,
+currency precision, file size cap, …) was treated as a **screen-local
+literal** instead of as a domain tunable. Once it appears on more
+than one surface, the literal becomes a duplication smell.
+
+## Mandatory recipe
+
+When a value satisfies **any** of these, hoist it into a single
+`abstract final class` constant in the feature's `domain/` folder
+(or `core/constants/` if the value is app-wide):
+
+- It is the same value in two or more files.
+- A user-facing string contains it (e.g. "4-digit PIN").
+- Validators / input formatters / hashers all need it.
+- Changing it is a product decision, not a screen-local choice.
+
+```dart
+abstract final class AuthConfig {
+  static const int pinLength = 4;
+  static String get pinLengthLabel => '$pinLength-digit';
+}
+```
+
+Every screen, validator, formatter, and copy string MUST read from
+this constant. **No more `static const _pinLength = 4;` per screen.**
+
+## Anti-patterns
+
+- `static const _xxxLength = N;` redeclared in each screen / sheet.
+- `LengthLimitingTextInputFormatter(6)` with the literal `6` next to
+  the matching validator `v.length != 6` and hint `"6-digit PIN"` —
+  three places to forget.
+- Hard-coding the value in tests too. Tests SHOULD use the constant
+  for length-dependent assertions (but plaintext fixture PINs like
+  `'1234'` are fine — they just need to be the right length).
+
+## Regression test pattern
+
+Before declaring a change complete, grep for the **old literal** and
+the **string form** of it across the repo:
+
+```bash
+rg --no-heading -n '\b6\b' lib/ test/ | rg -i 'pin|digit'
+```
+
+If anything outside the central constant matches, it's a duplication
+that will rot.
+
+## Stack-specific note (Flutter)
+
+- Place the constant in `lib/features/<feature>/domain/<feature>_config.dart`
+  for feature-scoped values.
+- Place it in `lib/core/constants/` for app-wide values.
+- Use `abstract final class` so the type can never be instantiated or
+  extended — this is the modern Dart 3 idiom for static-only holders.

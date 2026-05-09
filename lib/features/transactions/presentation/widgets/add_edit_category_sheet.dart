@@ -54,26 +54,52 @@ const _categoryIcons = [
 Future<void> showAddEditCategorySheet(
   BuildContext context, {
   CategoryModel? existing,
+  bool? initialIsIncome,
 }) {
   return showAppBottomSheet(
     context: context,
     title: existing == null ? 'Add Category' : 'Edit Category',
     maxHeightFraction: 0.92,
-    child: _AddEditCategoryForm(existing: existing),
+    child: _AddEditCategoryForm(
+      existing: existing,
+      initialIsIncome: initialIsIncome,
+    ),
   );
 }
 
+bool isDuplicateCategoryName({
+  required String candidate,
+  required List<CategoryModel> categories,
+  required bool isIncome,
+  int? excludeCategoryId,
+}) {
+  final normalizedCandidate = candidate.trim().toLowerCase();
+  if (normalizedCandidate.isEmpty) {
+    return false;
+  }
+
+  return categories.any((category) {
+    if (category.isIncome != isIncome) {
+      return false;
+    }
+    if (excludeCategoryId != null && category.id == excludeCategoryId) {
+      return false;
+    }
+    return category.name.trim().toLowerCase() == normalizedCandidate;
+  });
+}
+
 class _AddEditCategoryForm extends ConsumerStatefulWidget {
-  const _AddEditCategoryForm({this.existing});
+  const _AddEditCategoryForm({this.existing, this.initialIsIncome});
   final CategoryModel? existing;
+  final bool? initialIsIncome;
 
   @override
   ConsumerState<_AddEditCategoryForm> createState() =>
       _AddEditCategoryFormState();
 }
 
-class _AddEditCategoryFormState
-    extends ConsumerState<_AddEditCategoryForm> {
+class _AddEditCategoryFormState extends ConsumerState<_AddEditCategoryForm> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
 
@@ -86,7 +112,7 @@ class _AddEditCategoryFormState
   void initState() {
     super.initState();
     final e = widget.existing;
-    _isIncome = e?.isIncome ?? false;
+    _isIncome = e?.isIncome ?? widget.initialIsIncome ?? false;
     _selectedColorValue =
         e?.colorValue ?? AppColors.categoryPalette.first.toARGB32();
     _selectedIconCodePoint =
@@ -135,9 +161,11 @@ class _AddEditCategoryFormState
     } catch (_) {
       if (mounted) {
         setState(() => _loading = false);
-        showAppSnackBar(context,
-            message: 'Something went wrong',
-            type: AppSnackBarType.error);
+        showAppSnackBar(
+          context,
+          message: 'Something went wrong',
+          type: AppSnackBarType.error,
+        );
       }
     }
   }
@@ -145,6 +173,17 @@ class _AddEditCategoryFormState
   @override
   Widget build(BuildContext context) {
     final selectedColor = Color(_selectedColorValue);
+    final categories = ref.watch(categoriesProvider).valueOrNull ?? [];
+    final existingNames =
+        categories
+            .where(
+              (category) =>
+                  category.isIncome == _isIncome &&
+                  category.id != widget.existing?.id,
+            )
+            .map((category) => category.name)
+            .toList()
+          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
 
     return Form(
       key: _formKey,
@@ -183,9 +222,40 @@ class _AddEditCategoryFormState
             validator: (v) {
               if (v == null || v.trim().isEmpty) return 'Name is required';
               if (v.trim().length > 30) return 'Name too long';
+              if (isDuplicateCategoryName(
+                candidate: v,
+                categories: categories,
+                isIncome: _isIncome,
+                excludeCategoryId: widget.existing?.id,
+              )) {
+                return 'Category already exists';
+              }
               return null;
             },
           ),
+
+          if (existingNames.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Existing ${_isIncome ? 'income' : 'expense'} categories:',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: existingNames
+                  .map(
+                    (name) => Chip(
+                      label: Text(name, overflow: TextOverflow.ellipsis),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
 
           const SizedBox(height: AppSpacing.md),
 
@@ -214,12 +284,20 @@ class _AddEditCategoryFormState
                           )
                         : null,
                     boxShadow: selected
-                        ? [BoxShadow(color: color.withAlpha(100), blurRadius: 6)]
+                        ? [
+                            BoxShadow(
+                              color: color.withAlpha(100),
+                              blurRadius: 6,
+                            ),
+                          ]
                         : null,
                   ),
                   child: selected
-                      ? const Icon(Icons.check_rounded,
-                          color: Colors.white, size: 18)
+                      ? const Icon(
+                          Icons.check_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        )
                       : null,
                 ),
               );
@@ -244,27 +322,26 @@ class _AddEditCategoryFormState
                 final icon = _categoryIcons[i];
                 final selected = icon.codePoint == _selectedIconCodePoint;
                 return GestureDetector(
-                  onTap: () => setState(
-                      () => _selectedIconCodePoint = icon.codePoint),
+                  onTap: () =>
+                      setState(() => _selectedIconCodePoint = icon.codePoint),
                   child: AnimatedContainer(
                     duration: AppDurations.fast,
                     decoration: BoxDecoration(
                       color: selected
                           ? selectedColor.withAlpha(40)
                           : Colors.transparent,
-                      borderRadius:
-                          BorderRadius.circular(AppSpacing.radiusSm),
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                       border: selected
                           ? Border.all(color: selectedColor, width: 1.5)
                           : null,
                     ),
-                    child: Icon(icon,
-                        color: selected
-                            ? selectedColor
-                            : Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                        size: 22),
+                    child: Icon(
+                      icon,
+                      color: selected
+                          ? selectedColor
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                      size: 22,
+                    ),
                   ),
                 );
               },
@@ -291,9 +368,9 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-        text,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-      );
+    text,
+    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+    ),
+  );
 }

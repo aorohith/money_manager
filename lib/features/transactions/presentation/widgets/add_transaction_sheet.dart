@@ -6,6 +6,7 @@ import '../../../../core/constants/constants.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../data/models/transaction_model.dart';
 import '../../domain/providers/transaction_providers.dart';
+import 'add_edit_category_sheet.dart';
 
 /// Shows the Add / Edit Transaction bottom sheet.
 Future<void> showAddTransactionSheet(
@@ -29,8 +30,7 @@ class _AddTransactionForm extends ConsumerStatefulWidget {
       _AddTransactionFormState();
 }
 
-class _AddTransactionFormState
-    extends ConsumerState<_AddTransactionForm> {
+class _AddTransactionFormState extends ConsumerState<_AddTransactionForm> {
   final _formKey = GlobalKey<FormState>();
   final _amountCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
@@ -67,22 +67,27 @@ class _AddTransactionFormState
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (_selectedCategoryId == null) {
-      showAppSnackBar(context,
-          message: 'Please select a category',
-          type: AppSnackBarType.error);
+      showAppSnackBar(
+        context,
+        message: 'Please select a category',
+        type: AppSnackBarType.error,
+      );
       return;
     }
     if (_selectedAccountId == null) {
-      showAppSnackBar(context,
-          message: 'Please select an account',
-          type: AppSnackBarType.error);
+      showAppSnackBar(
+        context,
+        message: 'Please select an account',
+        type: AppSnackBarType.error,
+      );
       return;
     }
 
     setState(() => _loading = true);
 
     try {
-      final tx = widget.existing ??
+      final tx =
+          widget.existing ??
           TransactionModel(
             amount: 0,
             categoryId: 0,
@@ -146,22 +151,24 @@ class _AddTransactionFormState
             child: SegmentedButton<bool>(
               segments: const [
                 ButtonSegment(
-                    value: false,
-                    label: Text('Expense'),
-                    icon: Icon(Icons.arrow_upward_rounded)),
+                  value: false,
+                  label: Text('Expense'),
+                  icon: Icon(Icons.arrow_upward_rounded),
+                ),
                 ButtonSegment(
-                    value: true,
-                    label: Text('Income'),
-                    icon: Icon(Icons.arrow_downward_rounded)),
+                  value: true,
+                  label: Text('Income'),
+                  icon: Icon(Icons.arrow_downward_rounded),
+                ),
               ],
               selected: {_isIncome},
               onSelectionChanged: (s) => setState(() {
-                    // Update the transaction type AND clear the category
-                    // selection — categories are filtered by income/expense,
-                    // so the previous selection would be invalid after switch.
-                    _isIncome = s.first;
-                    _selectedCategoryId = null;
-                  }),
+                // Update the transaction type AND clear the category
+                // selection — categories are filtered by income/expense,
+                // so the previous selection would be invalid after switch.
+                _isIncome = s.first;
+                _selectedCategoryId = null;
+              }),
             ),
           ),
 
@@ -173,8 +180,7 @@ class _AddTransactionFormState
             label: 'Amount',
             hint: '0.00',
             prefixIcon: const Icon(Icons.attach_money_rounded),
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
             ],
@@ -182,8 +188,7 @@ class _AddTransactionFormState
             semanticLabel: 'Transaction amount',
             validator: (v) {
               if (v == null || v.isEmpty) return 'Amount is required';
-              final n =
-                  double.tryParse(v.replaceAll(',', ''));
+              final n = double.tryParse(v.replaceAll(',', ''));
               if (n == null || n <= 0) {
                 return 'Enter a valid positive amount';
               }
@@ -194,12 +199,23 @@ class _AddTransactionFormState
           const SizedBox(height: AppSpacing.md),
 
           // Category selector
-          _SectionLabel('Category'),
+          Row(
+            children: [
+              const Expanded(child: _SectionLabel('Category')),
+              TextButton.icon(
+                onPressed: () => showAddEditCategorySheet(
+                  context,
+                  initialIsIncome: _isIncome,
+                ),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Add Category'),
+              ),
+            ],
+          ),
           const SizedBox(height: AppSpacing.xs),
           _buildCategoryGrid(
-              categories
-                  .where((c) => c.isIncome == _isIncome)
-                  .toList()),
+            categories.where((c) => c.isIncome == _isIncome).toList(),
+          ),
 
           const SizedBox(height: AppSpacing.md),
 
@@ -208,17 +224,17 @@ class _AddTransactionFormState
           const SizedBox(height: AppSpacing.xs),
           InkWell(
             onTap: _pickDate,
-            borderRadius:
-                BorderRadius.circular(AppSpacing.radiusMd),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             child: Container(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm + 2),
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm + 2,
+              ),
               decoration: BoxDecoration(
                 border: Border.all(
-                    color: Theme.of(context).colorScheme.outline),
-                borderRadius:
-                    BorderRadius.circular(AppSpacing.radiusMd),
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
               ),
               child: Row(
                 children: [
@@ -274,21 +290,22 @@ class _AddTransactionFormState
           InputDecorator(
             decoration: const InputDecoration(
               prefixIcon: Icon(Icons.repeat_rounded),
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<RecurrenceType>(
                 value: _recurrence,
                 isExpanded: true,
                 items: RecurrenceType.values
-                    .map((r) => DropdownMenuItem(
-                          value: r,
-                          child: Text(_recurrenceLabel(r)),
-                        ))
+                    .map(
+                      (r) => DropdownMenuItem(
+                        value: r,
+                        child: Text(_recurrenceLabel(r)),
+                      ),
+                    )
                     .toList(),
-                onChanged: (v) => setState(
-                    () => _recurrence = v ?? RecurrenceType.none),
+                onChanged: (v) =>
+                    setState(() => _recurrence = v ?? RecurrenceType.none),
               ),
             ),
           ),
@@ -332,11 +349,8 @@ class _AddTransactionFormState
             child: AnimatedContainer(
               duration: AppDurations.fast,
               decoration: BoxDecoration(
-                color: selected
-                    ? cat.color.withAlpha(50)
-                    : Colors.transparent,
-                borderRadius:
-                    BorderRadius.circular(AppSpacing.radiusMd),
+                color: selected ? cat.color.withAlpha(50) : Colors.transparent,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                 border: selected
                     ? Border.all(color: cat.color, width: 2)
                     : null,
@@ -348,16 +362,11 @@ class _AddTransactionFormState
                   const SizedBox(height: 4),
                   Text(
                     cat.name,
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelSmall
-                        ?.copyWith(
-                          color: selected
-                              ? cat.color
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .onSurface,
-                        ),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: selected
+                          ? cat.color
+                          : Theme.of(context).colorScheme.onSurface,
+                    ),
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -382,12 +391,12 @@ class _AddTransactionFormState
   }
 
   String _recurrenceLabel(RecurrenceType r) => switch (r) {
-        RecurrenceType.none => 'One-time',
-        RecurrenceType.daily => 'Daily',
-        RecurrenceType.weekly => 'Weekly',
-        RecurrenceType.monthly => 'Monthly',
-        RecurrenceType.yearly => 'Yearly',
-      };
+    RecurrenceType.none => 'One-time',
+    RecurrenceType.daily => 'Daily',
+    RecurrenceType.weekly => 'Weekly',
+    RecurrenceType.monthly => 'Monthly',
+    RecurrenceType.yearly => 'Yearly',
+  };
 }
 
 class _SectionLabel extends StatelessWidget {
@@ -396,9 +405,9 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-        text,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-      );
+    text,
+    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+    ),
+  );
 }
