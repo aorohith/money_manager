@@ -1,0 +1,30 @@
+# Flutter Icon Tree-Shake Safety
+
+## Mistake
+Release APK build failed because models created icons with `IconData(codePoint, ...)`, which blocks icon tree-shaking.
+
+## Root cause
+Persisted `codePoint` values were converted back to icons through non-const `IconData` constructors instead of resolving to compile-time `Icons.*` constants.
+
+## Required recipe
+- Persist only `icon.codePoint` in storage.
+- Resolve stored code points through a central map of `codePoint -> const Icons.*`.
+- Never call `IconData(dynamicValue, fontFamily: 'MaterialIcons')` in app/runtime models.
+- Provide a deterministic fallback icon when a code point is missing from the map.
+
+```dart
+abstract final class MaterialIconResolver {
+  static const fallback = Icons.category_rounded;
+  static final _icons = {
+    Icons.savings_rounded.codePoint: Icons.savings_rounded,
+  };
+
+  static IconData fromCodePoint(int codePoint) => _icons[codePoint] ?? fallback;
+}
+```
+
+## Regression test pattern
+- Add a unit test for resolver known and unknown code points.
+- Keep a release-build smoke command in verification: `fvm flutter build apk --release`.
+- Audit for forbidden dynamic constructors:
+  `rg --no-heading -n "IconData\\(" lib/`.

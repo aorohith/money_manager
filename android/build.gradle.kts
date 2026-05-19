@@ -22,6 +22,10 @@ subprojects {
                 if (namespace == null) {
                     namespace = project.group.toString().ifEmpty { "com.${project.name.replace("-", "_")}" }
                 }
+                // Ensure legacy plugins don't compile with SDK < 31 (e.g., android:attr/lStar).
+                if ((compileSdk ?: 0) < 34) {
+                    compileSdk = 34
+                }
             }
         }
     }

@@ -372,7 +372,7 @@ class _PermissionBanner extends StatelessWidget {
   }
 
   Future<void> _openSettings() async {
-    await const MethodChannel('com.example.money_manager/sms')
+    await const MethodChannel(AppConfig.smsMethodChannel)
         .invokeMethod<void>('openNotificationSettings');
   }
 }

@@ -1,0 +1,37 @@
+---
+description: Prevent Android plugin compileSdk resource-linking failures
+alwaysApply: true
+---
+
+# Android Plugin compileSdk Compatibility
+
+## Mistake
+
+Release build failed with `AAPT: error: resource android:attr/lStar not found`.
+
+## Root Cause
+
+A transitive Android library plugin used `compileSdkVersion 30`, while its AndroidX dependencies referenced API 31+ resources.
+
+## Required Recipe
+
+- In `android/build.gradle.kts`, enforce a minimum `compileSdk` for all Android library subprojects.
+- Keep this guard in the shared `subprojects { afterEvaluate { ... } }` block so it applies to pub plugins too.
+- Use a modern floor (`34` or current project compile SDK), never `< 31`.
+
+```kotlin
+subprojects {
+    afterEvaluate {
+        if (project.plugins.hasPlugin("com.android.library")) {
+            extensions.configure<com.android.build.gradle.LibraryExtension> {
+                if (compileSdk < 34) compileSdk = 34
+            }
+        }
+    }
+}
+```
+
+## Regression Check
+
+- Run `fvm flutter build apk --release`.
+- If it fails, inspect `build/.../values.xml` errors for missing `android:attr/*` resources and verify library module compile SDK values.

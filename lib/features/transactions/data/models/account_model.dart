@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
+import 'package:money_manager/core/utils/material_icon_resolver.dart';
 
 part 'account_model.g.dart';
 
@@ -27,7 +28,7 @@ class AccountModel {
   String? userId;
 
   @ignore
-  IconData get icon => IconData(iconCodePoint, fontFamily: 'MaterialIcons');
+  IconData get icon => MaterialIconResolver.fromCodePoint(iconCodePoint);
 
   @ignore
   Color get color => Color(colorValue);

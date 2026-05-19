@@ -1,4 +1,4 @@
-package com.example.money_manager
+package com.rapps.moneymanager
 
 import android.app.Notification
 import android.content.Intent
@@ -24,7 +24,8 @@ import io.flutter.plugin.common.MethodChannel
 class SmsListenerService : NotificationListenerService() {
 
     companion object {
-        const val CHANNEL_NAME = "com.example.money_manager/sms"
+        // Keep in sync with AppConfig.smsMethodChannel in lib/core/constants/app_config.dart
+        const val CHANNEL_NAME = "com.rapps.moneymanager/sms"
         var channel: MethodChannel? = null
         private val mainHandler = Handler(Looper.getMainLooper())
 

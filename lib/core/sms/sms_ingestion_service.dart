@@ -3,6 +3,7 @@ import 'dart:developer' show log;
 
 import 'package:flutter/services.dart';
 import 'package:isar/isar.dart';
+import 'package:money_manager/core/constants/constants.dart';
 
 import '../../features/sms/data/models/sms_parsed_transaction.dart';
 import '../../features/sms/data/repositories/sms_repository.dart';
@@ -22,7 +23,7 @@ class SmsIngestionService {
   final Isar _isar;
   final SmsRepository _repo;
 
-  static const _channel = MethodChannel('com.example.money_manager/sms');
+  static const _channel = MethodChannel(AppConfig.smsMethodChannel);
   static const _parser = TransactionParser.instance;
   static const _categorizer = CategorizationEngine();
 

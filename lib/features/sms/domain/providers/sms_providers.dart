@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/constants/constants.dart';
 import '../../../../core/database/isar_service.dart';
 import '../../data/models/sms_parsed_transaction.dart';
 import '../../data/models/sms_rule_model.dart';
@@ -76,7 +77,7 @@ final smsSettingsProvider =
 
 // ── Notification-listener permission ─────────────────────────────────────────
 
-const _smsChannel = MethodChannel('com.example.money_manager/sms');
+const _smsChannel = MethodChannel(AppConfig.smsMethodChannel);
 
 final smsPermissionProvider = FutureProvider.autoDispose<bool>((ref) async {
   try {

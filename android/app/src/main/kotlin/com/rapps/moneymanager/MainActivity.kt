@@ -1,4 +1,4 @@
-package com.example.money_manager
+package com.rapps.moneymanager
 
 import android.content.Intent
 import android.os.Bundle
