@@ -27,8 +27,9 @@ class ManageCategoriesScreen extends ConsumerWidget {
               delegate: SliverChildBuilderDelegate(
                 (_, __) => const Padding(
                   padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.screenPadding,
-                      vertical: AppSpacing.xs),
+                    horizontal: AppSpacing.screenPadding,
+                    vertical: AppSpacing.xs,
+                  ),
                   child: ShimmerLoader(
                     child: ShimmerBox(width: double.infinity, height: 64),
                   ),
@@ -44,10 +45,8 @@ class ManageCategoriesScreen extends ConsumerWidget {
               ),
             ),
             data: (categories) {
-              final expense =
-                  categories.where((c) => !c.isIncome).toList();
-              final income =
-                  categories.where((c) => c.isIncome).toList();
+              final expense = categories.where((c) => !c.isIncome).toList();
+              final income = categories.where((c) => c.isIncome).toList();
 
               return SliverPadding(
                 padding: const EdgeInsets.fromLTRB(
@@ -60,11 +59,21 @@ class ManageCategoriesScreen extends ConsumerWidget {
                   delegate: SliverChildListDelegate([
                     _GroupHeader('Expense', expense.length),
                     const SizedBox(height: AppSpacing.xs),
-                    ...expense.map((c) => _CategoryTile(category: c)),
+                    ...expense.indexed.map(
+                      (entry) => AnimatedListItem(
+                        index: entry.$1,
+                        child: _CategoryTile(category: entry.$2),
+                      ),
+                    ),
                     const SizedBox(height: AppSpacing.md),
                     _GroupHeader('Income', income.length),
                     const SizedBox(height: AppSpacing.xs),
-                    ...income.map((c) => _CategoryTile(category: c)),
+                    ...income.indexed.map(
+                      (entry) => AnimatedListItem(
+                        index: expense.length + entry.$1,
+                        child: _CategoryTile(category: entry.$2),
+                      ),
+                    ),
                   ]),
                 ),
               );
@@ -88,16 +97,15 @@ class _GroupHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(
-            left: AppSpacing.xs, bottom: AppSpacing.xs),
-        child: Text(
-          '$label ($count)',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-      );
+    padding: const EdgeInsets.only(left: AppSpacing.xs, bottom: AppSpacing.xs),
+    child: Text(
+      '$label ($count)',
+      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  );
 }
 
 class _CategoryTile extends ConsumerWidget {
@@ -111,13 +119,13 @@ class _CategoryTile extends ConsumerWidget {
       direction: DismissDirection.endToStart,
       confirmDismiss: (_) => _confirmDelete(context, category),
       onDismissed: (_) async {
-        await ref
-            .read(categoryRepositoryProvider)
-            .delete(category.id);
+        await ref.read(categoryRepositoryProvider).delete(category.id);
         if (context.mounted) {
-          showAppSnackBar(context,
-              message: '${category.name} deleted',
-              type: AppSnackBarType.success);
+          showAppSnackBar(
+            context,
+            message: '${category.name} deleted',
+            type: AppSnackBarType.success,
+          );
         }
       },
       background: Container(
@@ -141,31 +149,31 @@ class _CategoryTile extends ConsumerWidget {
             ),
             child: Icon(category.icon, color: category.color, size: 20),
           ),
-          title: Text(category.name,
-              style: Theme.of(context).textTheme.titleSmall),
+          title: Text(
+            category.name,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (category.isDefault)
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest,
-                    borderRadius:
-                        BorderRadius.circular(AppSpacing.radiusFull),
+                    horizontal: 8,
+                    vertical: 2,
                   ),
-                  child: Text('Default',
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelSmall
-                          ?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                          )),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+                  ),
+                  child: Text(
+                    'Default',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ),
               const SizedBox(width: AppSpacing.sm),
               const Icon(Icons.chevron_right_rounded, size: 18),
@@ -178,12 +186,13 @@ class _CategoryTile extends ConsumerWidget {
     );
   }
 
-  Future<bool?> _confirmDelete(
-      BuildContext context, CategoryModel category) {
+  Future<bool?> _confirmDelete(BuildContext context, CategoryModel category) {
     if (category.isDefault) {
-      showAppSnackBar(context,
-          message: 'Default categories cannot be deleted',
-          type: AppSnackBarType.error);
+      showAppSnackBar(
+        context,
+        message: 'Default categories cannot be deleted',
+        type: AppSnackBarType.error,
+      );
       return Future.value(false);
     }
     return showDialog<bool>(
@@ -191,7 +200,8 @@ class _CategoryTile extends ConsumerWidget {
       builder: (_) => AlertDialog(
         title: const Text('Delete category?'),
         content: Text(
-            'Delete "${category.name}"? Transactions using it will keep their existing category ID.'),
+          'Delete "${category.name}"? Transactions using it will keep their existing category ID.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -199,8 +209,7 @@ class _CategoryTile extends ConsumerWidget {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            style:
-                FilledButton.styleFrom(backgroundColor: AppColors.error),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('Delete'),
           ),
         ],

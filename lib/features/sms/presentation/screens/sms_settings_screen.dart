@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/constants.dart';
+import '../../../../core/database/isar_service.dart';
+import '../../../../core/sms/sms_ingestion_service.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../data/models/sms_rule_model.dart';
 import '../../domain/models/sms_settings.dart';
@@ -17,6 +19,8 @@ class SmsSettingsScreen extends ConsumerStatefulWidget {
 
 class _SmsSettingsScreenState extends ConsumerState<SmsSettingsScreen>
     with WidgetsBindingObserver {
+  bool _isSyncing = false;
+
   @override
   void initState() {
     super.initState();
@@ -36,6 +40,44 @@ class _SmsSettingsScreenState extends ConsumerState<SmsSettingsScreen>
     // Settings, grants access, and returns — the banner updates automatically.
     if (state == AppLifecycleState.resumed) {
       ref.invalidate(smsPermissionProvider);
+    }
+  }
+
+  Future<void> _syncExpenses() async {
+    if (_isSyncing) return;
+    HapticFeedback.mediumImpact();
+    setState(() => _isSyncing = true);
+    try {
+      final syncService = SmsIngestionService(
+        ref.read(isarProvider),
+        ref.read(smsRepositoryProvider),
+      );
+      final result = await syncService.syncInbox();
+      ref.invalidate(smsPendingProvider);
+      if (!mounted) return;
+      if (!result.permissionGranted) {
+        showAppSnackBar(
+          context,
+          message: 'SMS permission is required to sync past expenses',
+          type: AppSnackBarType.warning,
+        );
+        return;
+      }
+
+      final message = result.queuedTransactions == 0
+          ? 'No new expenses found in recent SMS'
+          : '${result.queuedTransactions} expense${result.queuedTransactions == 1 ? '' : 's'} queued for review';
+      showAppSnackBar(
+        context,
+        message: message,
+        type: result.queuedTransactions == 0
+            ? AppSnackBarType.info
+            : AppSnackBarType.success,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSyncing = false);
+      }
     }
   }
 
@@ -59,7 +101,11 @@ class _SmsSettingsScreenState extends ConsumerState<SmsSettingsScreen>
               delegate: SliverChildListDelegate([
                 // Permission status banner
                 permissionAsync.when(
-                  data: (enabled) => _PermissionBanner(enabled: enabled),
+                  data: (enabled) => _PermissionBanner(
+                    enabled: enabled,
+                    isSyncing: _isSyncing,
+                    onSync: _syncExpenses,
+                  ),
                   loading: () => const SizedBox.shrink(),
                   error: (_, __) => const SizedBox.shrink(),
                 ),
@@ -70,19 +116,23 @@ class _SmsSettingsScreenState extends ConsumerState<SmsSettingsScreen>
 
                 settingsAsync.when(
                   loading: () => const ShimmerBox(
-                      width: double.infinity,
-                      height: 160,
-                      borderRadius: 16),
+                    width: double.infinity,
+                    height: 160,
+                    borderRadius: 16,
+                  ),
                   error: (_, __) => const SizedBox.shrink(),
                   data: (settings) => Column(
                     children: [
                       // Master toggle
                       AppCard(
                         child: SwitchListTile(
-                          title: const Text('Enable auto-detection',
-                              style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600)),
+                          title: const Text(
+                            'Enable auto-detection',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                           subtitle: const Text(
                             'Scan bank notifications for transactions',
                             style: TextStyle(fontSize: 12),
@@ -105,11 +155,8 @@ class _SmsSettingsScreenState extends ConsumerState<SmsSettingsScreen>
                             children: [
                               Text(
                                 'Auto-add mode',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelMedium
-                                    ?.copyWith(
-                                        fontWeight: FontWeight.w600),
+                                style: Theme.of(context).textTheme.labelMedium
+                                    ?.copyWith(fontWeight: FontWeight.w600),
                               ),
                               const SizedBox(height: AppSpacing.sm),
                               RadioGroup<SmsAutoAddMode>(
@@ -117,24 +164,20 @@ class _SmsSettingsScreenState extends ConsumerState<SmsSettingsScreen>
                                 onChanged: (v) {
                                   if (v != null) {
                                     ref
-                                        .read(smsSettingsProvider
-                                            .notifier)
+                                        .read(smsSettingsProvider.notifier)
                                         .setAutoAddMode(v);
                                   }
                                 },
                                 child: Column(
-                                  children: SmsAutoAddMode.values
-                                      .map((mode) {
+                                  children: SmsAutoAddMode.values.map((mode) {
                                     return RadioListTile<SmsAutoAddMode>(
                                       title: Text(
                                         mode.label,
-                                        style: const TextStyle(
-                                            fontSize: 13),
+                                        style: const TextStyle(fontSize: 13),
                                       ),
                                       subtitle: Text(
                                         mode.description,
-                                        style: const TextStyle(
-                                            fontSize: 11),
+                                        style: const TextStyle(fontSize: 11),
                                       ),
                                       value: mode,
                                       contentPadding: EdgeInsets.zero,
@@ -162,9 +205,7 @@ class _SmsSettingsScreenState extends ConsumerState<SmsSettingsScreen>
                                     style: Theme.of(context)
                                         .textTheme
                                         .labelMedium
-                                        ?.copyWith(
-                                            fontWeight:
-                                                FontWeight.w600),
+                                        ?.copyWith(fontWeight: FontWeight.w600),
                                   ),
                                   Text(
                                     '${settings.confidenceThreshold}%',
@@ -180,28 +221,24 @@ class _SmsSettingsScreenState extends ConsumerState<SmsSettingsScreen>
                               ),
                               Text(
                                 'Ask for confirmation below this score',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
+                                style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
-                                      color: Theme.of(context)
-                                          .brightness ==
-                                          Brightness.dark
+                                      color:
+                                          Theme.of(context).brightness ==
+                                              Brightness.dark
                                           ? AppColors.textSecondaryDark
                                           : AppColors.textSecondary,
                                     ),
                               ),
                               Slider(
-                                value: settings.confidenceThreshold
-                                    .toDouble(),
+                                value: settings.confidenceThreshold.toDouble(),
                                 min: 30,
                                 max: 100,
                                 divisions: 14,
                                 activeColor: AppColors.brand,
                                 onChanged: (v) => ref
                                     .read(smsSettingsProvider.notifier)
-                                    .setConfidenceThreshold(
-                                        v.round()),
+                                    .setConfidenceThreshold(v.round()),
                               ),
                             ],
                           ),
@@ -214,11 +251,13 @@ class _SmsSettingsScreenState extends ConsumerState<SmsSettingsScreen>
                             children: [
                               SwitchListTile(
                                 title: const Text(
-                                    'Detect subscriptions',
-                                    style: TextStyle(fontSize: 14)),
+                                  'Detect subscriptions',
+                                  style: TextStyle(fontSize: 14),
+                                ),
                                 subtitle: const Text(
-                                    'Flag recurring monthly payments',
-                                    style: TextStyle(fontSize: 12)),
+                                  'Flag recurring monthly payments',
+                                  style: TextStyle(fontSize: 12),
+                                ),
                                 value: settings.detectSubscriptions,
                                 onChanged: (v) => ref
                                     .read(smsSettingsProvider.notifier)
@@ -228,11 +267,14 @@ class _SmsSettingsScreenState extends ConsumerState<SmsSettingsScreen>
                                 dense: true,
                               ),
                               SwitchListTile(
-                                title: const Text('Detect refunds',
-                                    style: TextStyle(fontSize: 14)),
+                                title: const Text(
+                                  'Detect refunds',
+                                  style: TextStyle(fontSize: 14),
+                                ),
                                 subtitle: const Text(
-                                    'Log credited amounts as income',
-                                    style: TextStyle(fontSize: 12)),
+                                  'Log credited amounts as income',
+                                  style: TextStyle(fontSize: 12),
+                                ),
                                 value: settings.detectRefunds,
                                 onChanged: (v) => ref
                                     .read(smsSettingsProvider.notifier)
@@ -255,25 +297,23 @@ class _SmsSettingsScreenState extends ConsumerState<SmsSettingsScreen>
 
                 rulesAsync.when(
                   loading: () => const ShimmerBox(
-                      width: double.infinity,
-                      height: 80,
-                      borderRadius: 16),
+                    width: double.infinity,
+                    height: 80,
+                    borderRadius: 16,
+                  ),
                   error: (_, __) => const SizedBox.shrink(),
                   data: (rules) => rules.isEmpty
                       ? AppCard(
                           child: Center(
                             child: Padding(
-                              padding:
-                                  const EdgeInsets.all(AppSpacing.md),
+                              padding: const EdgeInsets.all(AppSpacing.md),
                               child: Text(
                                 'No rules yet — they\'ll appear here as you categorise merchants.',
                                 textAlign: TextAlign.center,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
+                                style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
-                                      color: Theme.of(context)
-                                                  .brightness ==
+                                      color:
+                                          Theme.of(context).brightness ==
                                               Brightness.dark
                                           ? AppColors.textSecondaryDark
                                           : AppColors.textSecondary,
@@ -304,8 +344,15 @@ class _SmsSettingsScreenState extends ConsumerState<SmsSettingsScreen>
 // ── Permission Banner ─────────────────────────────────────────────────────────
 
 class _PermissionBanner extends StatelessWidget {
-  const _PermissionBanner({required this.enabled});
+  const _PermissionBanner({
+    required this.enabled,
+    required this.isSyncing,
+    required this.onSync,
+  });
+
   final bool enabled;
+  final bool isSyncing;
+  final VoidCallback onSync;
 
   @override
   Widget build(BuildContext context) {
@@ -317,17 +364,51 @@ class _PermissionBanner extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
           border: Border.all(color: AppColors.income.withAlpha(60)),
         ),
-        child: Row(
+        child: Column(
           children: [
-            Icon(Icons.check_circle_rounded,
-                color: AppColors.income, size: 18),
-            const SizedBox(width: AppSpacing.sm),
-            Text(
-              'Notification access granted',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: AppColors.income,
-                    fontWeight: FontWeight.w600,
+            Row(
+              children: [
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: AppColors.income,
+                  size: 18,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    'Notification access granted',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: AppColors.income,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: isSyncing ? null : onSync,
+                icon: isSyncing
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.sync_rounded, size: 18),
+                label: Text(isSyncing ? 'Syncing...' : 'Sync expenses'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.income,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: AppColors.income.withAlpha(90),
+                  disabledForegroundColor: Colors.white70,
+                  visualDensity: VisualDensity.compact,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -342,16 +423,19 @@ class _PermissionBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.warning_amber_rounded,
-              color: AppColors.budgetHigh, size: 18),
+          Icon(
+            Icons.warning_amber_rounded,
+            color: AppColors.budgetHigh,
+            size: 18,
+          ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               'Notification access not granted',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: AppColors.budgetHigh,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: AppColors.budgetHigh,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           TextButton(
@@ -360,11 +444,15 @@ class _PermissionBanner extends StatelessWidget {
               foregroundColor: AppColors.budgetHigh,
               minimumSize: Size.zero,
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm, vertical: 4),
+                horizontal: AppSpacing.sm,
+                vertical: 4,
+              ),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: const Text('Grant',
-                style: TextStyle(fontWeight: FontWeight.w700)),
+            child: const Text(
+              'Grant',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
           ),
         ],
       ),
@@ -372,8 +460,9 @@ class _PermissionBanner extends StatelessWidget {
   }
 
   Future<void> _openSettings() async {
-    await const MethodChannel(AppConfig.smsMethodChannel)
-        .invokeMethod<void>('openNotificationSettings');
+    await const MethodChannel(
+      AppConfig.smsMethodChannel,
+    ).invokeMethod<void>('openNotificationSettings');
   }
 }
 
@@ -389,12 +478,10 @@ class _SectionHeader extends StatelessWidget {
     return Text(
       title,
       style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: isDark
-                ? AppColors.textSecondaryDark
-                : AppColors.textSecondary,
-            letterSpacing: 0.5,
-          ),
+        fontWeight: FontWeight.w700,
+        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+        letterSpacing: 0.5,
+      ),
     );
   }
 }
@@ -415,13 +502,15 @@ class _RuleTile extends ConsumerWidget {
           color: AppColors.brand.withAlpha(18),
           borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
         ),
-        child: const Icon(Icons.store_rounded,
-            size: 18, color: AppColors.brand),
+        child: const Icon(
+          Icons.store_rounded,
+          size: 18,
+          color: AppColors.brand,
+        ),
       ),
       title: Text(
         rule.userAlias ?? rule.merchantKey,
-        style:
-            const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
         '${rule.useCount} confirmation${rule.useCount == 1 ? '' : 's'}'
@@ -430,8 +519,7 @@ class _RuleTile extends ConsumerWidget {
       ),
       trailing: IconButton(
         icon: const Icon(Icons.delete_outline_rounded, size: 18),
-        onPressed: () =>
-            ref.read(smsRepositoryProvider).deleteRule(rule.id),
+        onPressed: () => ref.read(smsRepositoryProvider).deleteRule(rule.id),
         color: AppColors.budgetOver,
         tooltip: 'Delete rule',
       ),

@@ -38,41 +38,40 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   }
 
   void _listenOverBudget() {
-    ref.listenManual(
-      transactionListProvider,
-      (_, __) async {
-        final month = ref.read(budgetSelectedMonthProvider);
-        final baseCurrency = ref.read(currencyCodeProvider).valueOrNull;
-        final progresses = await ref
-            .read(budgetRepositoryProvider)
-            .getBudgetsForMonth(month)
-            .then((budgets) => Future.wait(
-                  budgets.map(
-                    (b) => ref.read(budgetRepositoryProvider).getBudgetProgress(
-                          budget: b,
-                          month: month,
-                          baseCurrencyCode: baseCurrency,
-                        ),
-                  ),
-                ));
+    ref.listenManual(transactionListProvider, (_, __) async {
+      final month = ref.read(budgetSelectedMonthProvider);
+      final baseCurrency = ref.read(currencyCodeProvider).valueOrNull;
+      final progresses = await ref
+          .read(budgetRepositoryProvider)
+          .getBudgetsForMonth(month)
+          .then(
+            (budgets) => Future.wait(
+              budgets.map(
+                (b) => ref
+                    .read(budgetRepositoryProvider)
+                    .getBudgetProgress(
+                      budget: b,
+                      month: month,
+                      baseCurrencyCode: baseCurrency,
+                    ),
+              ),
+            ),
+          );
 
-        for (final p in progresses) {
-          if (p.isOver && mounted) {
-            final name =
-                p.budget.categoryId == null ? 'Overall' : 'Category';
-            showAppSnackBar(
-              context,
-              message:
-                  '$name budget exceeded by \$${(-p.remaining).toStringAsFixed(0)}',
-              type: AppSnackBarType.error,
-              actionLabel: 'View',
-            );
-            break; // Show one at a time
-          }
+      for (final p in progresses) {
+        if (p.isOver && mounted) {
+          final name = p.budget.categoryId == null ? 'Overall' : 'Category';
+          showAppSnackBar(
+            context,
+            message:
+                '$name budget exceeded by \$${(-p.remaining).toStringAsFixed(0)}',
+            type: AppSnackBarType.error,
+            actionLabel: 'View',
+          );
+          break; // Show one at a time
         }
-      },
-      fireImmediately: false,
-    );
+      }
+    }, fireImmediately: false);
   }
 
   @override
@@ -92,12 +91,22 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     final year = month ~/ 100;
     final mo = month % 100;
     const months = [
-      '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     final now = DateTime.now();
-    final suffix =
-        (year != now.year) ? ' $year' : '';
+    final suffix = (year != now.year) ? ' $year' : '';
     return '${months[mo.clamp(1, 12)]}$suffix';
   }
 
@@ -129,9 +138,8 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                 controller: _pageCtrl,
                 onPageChanged: (page) {
                   HapticFeedback.selectionClick();
-                  ref
-                      .read(budgetSelectedMonthProvider.notifier)
-                      .state = _pageToMonth(page);
+                  ref.read(budgetSelectedMonthProvider.notifier).state =
+                      _pageToMonth(page);
                 },
                 itemBuilder: (_, page) {
                   final month = _pageToMonth(page);
@@ -183,15 +191,15 @@ class _MonthTab extends StatelessWidget {
       child: AnimatedContainer(
         duration: AppDurations.fast,
         margin: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
-        padding:
-            const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.brand
               : theme.colorScheme.surfaceContainerHighest,
-          borderRadius:
-              BorderRadius.circular(AppSpacing.radiusFull),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
         ),
         child: Center(
           child: Text(
@@ -200,8 +208,7 @@ class _MonthTab extends StatelessWidget {
               color: isSelected
                   ? Colors.white
                   : theme.colorScheme.onSurfaceVariant,
-              fontWeight:
-                  isSelected ? FontWeight.w700 : FontWeight.w500,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             ),
           ),
         ),
@@ -223,9 +230,8 @@ class _BudgetBody extends ConsumerWidget {
 
     return progressAsync.when(
       loading: () => _buildLoading(),
-      error: (e, _) => SliverFillRemaining(
-        child: Center(child: Text('Error: $e')),
-      ),
+      error: (e, _) =>
+          SliverFillRemaining(child: Center(child: Text('Error: $e'))),
       data: (progresses) {
         final categoryProgresses = progresses
             .where((p) => p.budget.categoryId != null)
@@ -254,10 +260,11 @@ class _BudgetBody extends ConsumerWidget {
                 data: (overall) {
                   if (overall == null) return const SizedBox.shrink();
                   return Padding(
-                    padding: const EdgeInsets.only(
-                        bottom: AppSpacing.lg),
-                    child: _OverallBudgetArcCard(progress: overall,
-                      month: month,),
+                    padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                    child: _OverallBudgetArcCard(
+                      progress: overall,
+                      month: month,
+                    ),
                   );
                 },
               ),
@@ -265,20 +272,19 @@ class _BudgetBody extends ConsumerWidget {
               // Category grid header
               if (categoryProgresses.isNotEmpty) ...[
                 Padding(
-                  padding: const EdgeInsets.only(
-                      bottom: AppSpacing.md),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
                   child: Text(
                     'Category Budgets',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w700),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 // 2-col grid
                 _CategoryBudgetGrid(
-                    progresses: categoryProgresses,
-                    month: month),
+                  progresses: categoryProgresses,
+                  month: month,
+                ),
               ],
             ]),
           ),
@@ -292,18 +298,15 @@ class _BudgetBody extends ConsumerWidget {
       padding: const EdgeInsets.all(AppSpacing.screenPadding),
       sliver: SliverList(
         delegate: SliverChildListDelegate([
-          ShimmerBox(
-              width: double.infinity, height: 200),
+          ShimmerBox(width: double.infinity, height: 200),
           const SizedBox(height: AppSpacing.lg),
-          Row(children: [
-            Expanded(
-                child: ShimmerBox(
-                    width: double.infinity, height: 160)),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-                child: ShimmerBox(
-                    width: double.infinity, height: 160)),
-          ]),
+          Row(
+            children: [
+              Expanded(child: ShimmerBox(width: double.infinity, height: 160)),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(child: ShimmerBox(width: double.infinity, height: 160)),
+            ],
+          ),
         ]),
       ),
     );
@@ -313,10 +316,7 @@ class _BudgetBody extends ConsumerWidget {
 // ── Overall arc card ───────────────────────────────────────────────────────
 
 class _OverallBudgetArcCard extends ConsumerWidget {
-  const _OverallBudgetArcCard({
-    required this.progress,
-    required this.month,
-  });
+  const _OverallBudgetArcCard({required this.progress, required this.month});
   final BudgetProgress progress;
   final int month;
 
@@ -343,10 +343,8 @@ class _OverallBudgetArcCard extends ConsumerWidget {
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius:
-            BorderRadius.circular(AppSpacing.radiusXl),
-        border: Border.all(
-            color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
         boxShadow: [
           BoxShadow(
             color: theme.colorScheme.shadow.withAlpha(10),
@@ -372,8 +370,7 @@ class _OverallBudgetArcCard extends ConsumerWidget {
                     painter: _ArcPainter(
                       value: v,
                       color: color,
-                      trackColor: theme.colorScheme
-                          .surfaceContainerHighest,
+                      trackColor: theme.colorScheme.surfaceContainerHighest,
                     ),
                   ),
                 ),
@@ -382,8 +379,7 @@ class _OverallBudgetArcCard extends ConsumerWidget {
                   children: [
                     Text(
                       '\$${progress.spent.toStringAsFixed(0)}',
-                      style: theme.textTheme.headlineSmall
-                          ?.copyWith(
+                      style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: color,
                       ),
@@ -391,14 +387,11 @@ class _OverallBudgetArcCard extends ConsumerWidget {
                     Text(
                       'of \$${progress.effectiveLimit.toStringAsFixed(0)}',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme
-                            .colorScheme.onSurfaceVariant,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    _StatusChip(
-                        label: progress.statusLabel,
-                        color: color),
+                    _StatusChip(label: progress.statusLabel, color: color),
                   ],
                 ),
               ],
@@ -429,10 +422,8 @@ class _OverallBudgetArcCard extends ConsumerWidget {
               _Divider(),
               _StatCell(
                 label: 'Projected',
-                value:
-                    '\$${progress.projectedMonthEnd.toStringAsFixed(0)}',
-                color: progress.projectedMonthEnd >
-                        progress.effectiveLimit
+                value: '\$${progress.projectedMonthEnd.toStringAsFixed(0)}',
+                color: progress.projectedMonthEnd > progress.effectiveLimit
                     ? AppColors.expense
                     : AppColors.income,
               ),
@@ -445,10 +436,8 @@ class _OverallBudgetArcCard extends ConsumerWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () => showSetBudgetSheet(
-                context,
-                existing: progress.budget,
-              ),
+              onPressed: () =>
+                  showSetBudgetSheet(context, existing: progress.budget),
               icon: const Icon(Icons.edit_rounded, size: 16),
               label: const Text('Edit Overall Budget'),
             ),
@@ -468,18 +457,19 @@ class _StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm, vertical: 2),
+        horizontal: AppSpacing.sm,
+        vertical: 2,
+      ),
       decoration: BoxDecoration(
         color: color.withAlpha(25),
-        borderRadius:
-            BorderRadius.circular(AppSpacing.radiusFull),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
       ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -567,8 +557,7 @@ class _ArcPainter extends CustomPainter {
 
     // Progress
     if (value > 0) {
-      canvas.drawArc(
-          rect, startAngle, sweepFull * value, false, progressPaint);
+      canvas.drawArc(rect, startAngle, sweepFull * value, false, progressPaint);
     }
   }
 
@@ -580,25 +569,18 @@ class _ArcPainter extends CustomPainter {
 // ── Category budget grid ───────────────────────────────────────────────────
 
 class _CategoryBudgetGrid extends ConsumerWidget {
-  const _CategoryBudgetGrid({
-    required this.progresses,
-    required this.month,
-  });
+  const _CategoryBudgetGrid({required this.progresses, required this.month});
   final List<BudgetProgress> progresses;
   final int month;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final categories = ref
-            .watch(expenseCategoriesProvider)
-            .valueOrNull ??
-        [];
+    final categories = ref.watch(expenseCategoriesProvider).valueOrNull ?? [];
 
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate:
-          const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         crossAxisSpacing: AppSpacing.md,
         mainAxisSpacing: AppSpacing.md,
@@ -614,18 +596,13 @@ class _CategoryBudgetGrid extends ConsumerWidget {
           (c) => c.id == p.budget.categoryId,
           orElse: () => _fallbackCategory(),
         );
-        return _AnimatedGridItem(
+        return AnimatedListItem(
           index: i,
           child: BudgetCard(
             progress: p,
-            category:
-                p.budget.categoryId != null ? cat : null,
-            onEdit: () => showSetBudgetSheet(
-              context,
-              existing: p.budget,
-            ),
-            onDelete: () =>
-                _confirmDelete(context, ref, p.budget),
+            category: p.budget.categoryId != null ? cat : null,
+            onEdit: () => showSetBudgetSheet(context, existing: p.budget),
+            onDelete: () => _confirmDelete(context, ref, p.budget),
           ),
         );
       },
@@ -651,21 +628,17 @@ class _CategoryBudgetGrid extends ConsumerWidget {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Delete Budget'),
-        content:
-            const Text('Remove this budget?'),
+        content: const Text('Remove this budget?'),
         actions: [
           TextButton(
-            onPressed: () =>
-                Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () =>
-                Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(context).pop(true),
             child: Text(
               'Delete',
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.error),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ),
         ],
@@ -674,64 +647,5 @@ class _CategoryBudgetGrid extends ConsumerWidget {
     if (confirmed == true) {
       await ref.read(deleteBudgetUseCaseProvider)(budget.id);
     }
-  }
-}
-
-class _AnimatedGridItem extends StatefulWidget {
-  const _AnimatedGridItem({
-    required this.index,
-    required this.child,
-  });
-  final int index;
-  final Widget child;
-
-  @override
-  State<_AnimatedGridItem> createState() => _AnimatedGridItemState();
-}
-
-class _AnimatedGridItemState extends State<_AnimatedGridItem>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _fade;
-  late Animation<Offset> _slide;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: AppDurations.standard,
-    );
-    _fade = CurvedAnimation(
-        parent: _ctrl, curve: Curves.easeOut);
-    _slide = Tween<Offset>(
-      begin: const Offset(0, 0.15),
-      end: Offset.zero,
-    ).animate(
-        CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
-
-    Future.delayed(
-      Duration(milliseconds: widget.index * 60),
-      () {
-        if (mounted) _ctrl.forward();
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fade,
-      child: SlideTransition(
-        position: _slide,
-        child: widget.child,
-      ),
-    );
   }
 }

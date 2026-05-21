@@ -38,8 +38,11 @@ class SmsRepository {
     return _isar.writeTxn(() => _isar.smsParsedTransactions.put(tx));
   }
 
-  Future<void> updateStatus(int id, SmsReviewStatus status,
-      {int? linkedTransactionId}) async {
+  Future<void> updateStatus(
+    int id,
+    SmsReviewStatus status, {
+    int? linkedTransactionId,
+  }) async {
     await _isar.writeTxn(() async {
       final tx = await _isar.smsParsedTransactions.get(id);
       if (tx == null) return;
@@ -93,6 +96,35 @@ class SmsRepository {
       }
 
       return txId;
+    });
+  }
+
+  /// Reverses an SMS approval.
+  ///
+  /// The created transaction is soft-deleted so normal ledger queries ignore
+  /// it, and the SMS row is moved back to pending review. [rawText] lets UI
+  /// callers restore the in-memory redacted body that was cleared on approval.
+  Future<void> undoApproval({
+    required int smsId,
+    required int transactionId,
+    String? rawText,
+  }) async {
+    await _isar.writeTxn(() async {
+      final tx = await _isar.transactionModels.get(transactionId);
+      if (tx != null) {
+        tx.isDeleted = true;
+        tx.updatedAt = DateTime.now();
+        await _isar.transactionModels.put(tx);
+      }
+
+      final sms = await _isar.smsParsedTransactions.get(smsId);
+      if (sms != null) {
+        sms.status = SmsReviewStatus.pending;
+        sms.linkedTransactionId = null;
+        sms.updatedAt = DateTime.now();
+        if (rawText != null) sms.rawText = rawText;
+        await _isar.smsParsedTransactions.put(sms);
+      }
     });
   }
 

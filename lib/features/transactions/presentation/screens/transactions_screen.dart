@@ -17,12 +17,10 @@ class TransactionsScreen extends ConsumerStatefulWidget {
   const TransactionsScreen({super.key});
 
   @override
-  ConsumerState<TransactionsScreen> createState() =>
-      _TransactionsScreenState();
+  ConsumerState<TransactionsScreen> createState() => _TransactionsScreenState();
 }
 
-class _TransactionsScreenState
-    extends ConsumerState<TransactionsScreen> {
+class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   final _searchCtrl = TextEditingController();
   Timer? _debounce;
 
@@ -45,8 +43,7 @@ class _TransactionsScreenState
   @override
   Widget build(BuildContext context) {
     final txAsync = ref.watch(transactionListProvider);
-    final categories =
-        ref.watch(categoriesProvider).valueOrNull ?? [];
+    final categories = ref.watch(categoriesProvider).valueOrNull ?? [];
     final currencySymbol =
         ref.watch(currencySymbolProvider).valueOrNull ?? '\$';
 
@@ -59,10 +56,11 @@ class _TransactionsScreenState
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.screenPadding,
-                    0,
-                    AppSpacing.screenPadding,
-                    AppSpacing.xs),
+                  AppSpacing.screenPadding,
+                  0,
+                  AppSpacing.screenPadding,
+                  AppSpacing.xs,
+                ),
                 child: AppTextField(
                   controller: _searchCtrl,
                   hint: 'Search transactions…',
@@ -82,8 +80,9 @@ class _TransactionsScreenState
           itemCount: 6,
           itemBuilder: (_, __) => const Padding(
             padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-                vertical: AppSpacing.xs),
+              horizontal: AppSpacing.screenPadding,
+              vertical: AppSpacing.xs,
+            ),
             child: ShimmerLoader(
               child: ShimmerBox(width: double.infinity, height: 64),
             ),
@@ -107,11 +106,11 @@ class _TransactionsScreenState
 
           final grouped = _groupByDate(txs);
           return RefreshIndicator(
-            onRefresh: () async =>
-                ref.invalidate(transactionListProvider),
+            onRefresh: () async => ref.invalidate(transactionListProvider),
             child: ListView.builder(
               padding: const EdgeInsets.only(
-                  bottom: AppSpacing.xxl + AppSpacing.fabSize),
+                bottom: AppSpacing.xxl + AppSpacing.fabSize,
+              ),
               itemCount: grouped.length,
               itemBuilder: (_, i) {
                 final entry = grouped[i];
@@ -122,14 +121,16 @@ class _TransactionsScreenState
                 final cat = categories
                     .where((c) => c.id == tx.categoryId)
                     .firstOrNull;
-                return TransactionTile(
-                  transaction: tx,
-                  category: cat,
-                  currencySymbol: currencySymbol,
-                  onTap: () =>
-                      showAddTransactionSheet(context, existing: tx),
-                  onDismissed: () => ref
-                      .read(deleteTransactionUseCaseProvider)(tx.id),
+                return AnimatedListItem(
+                  index: i,
+                  child: TransactionTile(
+                    transaction: tx,
+                    category: cat,
+                    currencySymbol: currencySymbol,
+                    onTap: () => showAddTransactionSheet(context, existing: tx),
+                    onDismissed: () =>
+                        ref.read(deleteTransactionUseCaseProvider)(tx.id),
+                  ),
                 );
               },
             ),
@@ -149,8 +150,7 @@ class _TransactionsScreenState
     final result = <Object>[];
     DateTime? lastDate;
     for (final tx in txs) {
-      final d =
-          DateTime(tx.date.year, tx.date.month, tx.date.day);
+      final d = DateTime(tx.date.year, tx.date.month, tx.date.day);
       if (lastDate == null || d != lastDate) {
         result.add(d);
         lastDate = d;
@@ -169,16 +169,16 @@ class _DateHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.screenPadding,
-          AppSpacing.md,
-          AppSpacing.screenPadding,
-          AppSpacing.xs),
+        AppSpacing.screenPadding,
+        AppSpacing.md,
+        AppSpacing.screenPadding,
+        AppSpacing.xs,
+      ),
       child: Text(
         AppFormatters.groupDate(date),
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color:
-                  Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   }

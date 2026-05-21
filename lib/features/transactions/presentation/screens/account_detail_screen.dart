@@ -89,18 +89,22 @@ class AccountDetailScreen extends ConsumerWidget {
                           );
                         }
                         return Column(
-                          children: txs.map((tx) {
+                          children: txs.indexed.map((entry) {
+                            final (index, tx) = entry;
                             final category = categories
                                 .where((c) => c.id == tx.categoryId)
                                 .firstOrNull;
-                            return AppCard(
-                              margin: const EdgeInsets.only(
-                                bottom: AppSpacing.xs,
-                              ),
-                              child: TransactionTile(
-                                transaction: tx,
-                                category: category,
-                                currencySymbol: currencySymbol,
+                            return AnimatedListItem(
+                              index: index,
+                              child: AppCard(
+                                margin: const EdgeInsets.only(
+                                  bottom: AppSpacing.xs,
+                                ),
+                                child: TransactionTile(
+                                  transaction: tx,
+                                  category: category,
+                                  currencySymbol: currencySymbol,
+                                ),
                               ),
                             );
                           }).toList(),

@@ -27,6 +27,7 @@ class SmsListenerService : NotificationListenerService() {
         // Keep in sync with AppConfig.smsMethodChannel in lib/core/constants/app_config.dart
         const val CHANNEL_NAME = "com.rapps.moneymanager/sms"
         var channel: MethodChannel? = null
+        private var activeService: SmsListenerService? = null
         private val mainHandler = Handler(Looper.getMainLooper())
 
         /** Package names of known banking / payment apps. */
@@ -77,17 +78,34 @@ class SmsListenerService : NotificationListenerService() {
             ) ?: return false
             return flat.contains(context.packageName)
         }
+
+        fun syncActiveNotifications(): Int {
+            return activeService?.syncActiveTransactionNotifications() ?: 0
+        }
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         val sbn = sbn ?: return
-        val pkg = sbn.packageName ?: return
-        val extras = sbn.notification?.extras ?: return
+        forwardIfTrusted(sbn)
+    }
+
+    private fun syncActiveTransactionNotifications(): Int {
+        val notifications = activeNotifications ?: return 0
+        var dispatched = 0
+        for (sbn in notifications) {
+            if (forwardIfTrusted(sbn)) dispatched++
+        }
+        return dispatched
+    }
+
+    private fun forwardIfTrusted(sbn: StatusBarNotification): Boolean {
+        val pkg = sbn.packageName ?: return false
+        val extras = sbn.notification?.extras ?: return false
 
         val title = extras.getString(Notification.EXTRA_TITLE) ?: ""
         val body = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
 
-        if (!isTrusted(pkg, title, body)) return
+        if (!isTrusted(pkg, title, body)) return false
 
         val payload = mapOf(
             "sender" to pkg,
@@ -99,6 +117,7 @@ class SmsListenerService : NotificationListenerService() {
         mainHandler.post {
             channel?.invokeMethod("onNotificationReceived", payload)
         }
+        return true
     }
 
     private fun isTrusted(pkg: String, title: String, body: String): Boolean {
@@ -112,9 +131,13 @@ class SmsListenerService : NotificationListenerService() {
 
     override fun onListenerConnected() {
         super.onListenerConnected()
+        activeService = this
     }
 
     override fun onListenerDisconnected() {
         super.onListenerDisconnected()
+        if (activeService == this) {
+            activeService = null
+        }
     }
 }

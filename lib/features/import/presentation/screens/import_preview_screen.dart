@@ -89,11 +89,14 @@ class ImportPreviewScreen extends ConsumerWidget {
                     separatorBuilder: (_, __) =>
                         const SizedBox(height: AppSpacing.sm),
                     itemBuilder: (context, index) {
-                      return ImportRowTile(
-                        previewRow: state.previewRows[index],
-                        onChanged: (selected) => ref
-                            .read(importControllerProvider.notifier)
-                            .toggleRow(index, selected),
+                      return AnimatedListItem(
+                        index: index,
+                        child: ImportRowTile(
+                          previewRow: state.previewRows[index],
+                          onChanged: (selected) => ref
+                              .read(importControllerProvider.notifier)
+                              .toggleRow(index, selected),
+                        ),
                       );
                     },
                   ),
@@ -103,8 +106,9 @@ class ImportPreviewScreen extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.screenPadding),
               child: AppButton(
-                label: AppLocalizations.of(context)
-                    .importRowsAction(state.selectedCount),
+                label: AppLocalizations.of(
+                  context,
+                ).importRowsAction(state.selectedCount),
                 loading: state.isLoading,
                 expanded: true,
                 onPressed: state.selectedCount == 0

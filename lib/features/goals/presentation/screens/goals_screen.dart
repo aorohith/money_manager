@@ -34,16 +34,16 @@ class GoalsScreen extends ConsumerWidget {
           ),
           goalsAsync.when(
             loading: () => _buildLoading(),
-            error: (e, _) => SliverFillRemaining(
-              child: Center(child: Text('Error: $e')),
-            ),
+            error: (e, _) =>
+                SliverFillRemaining(child: Center(child: Text('Error: $e'))),
             data: (goals) {
               if (goals.isEmpty) {
                 return SliverFillRemaining(
                   child: EmptyState(
                     icon: Icons.flag_rounded,
                     title: 'No goals yet',
-                    subtitle: 'Set a savings goal to start tracking your progress',
+                    subtitle:
+                        'Set a savings goal to start tracking your progress',
                     actionLabel: 'Add Goal',
                     action: () => showAddGoalSheet(context),
                   ),
@@ -52,45 +52,54 @@ class GoalsScreen extends ConsumerWidget {
 
               final active = goals.where((g) => !g.isCompleted).toList();
               final completed = goals.where((g) => g.isCompleted).toList();
+              var animationIndex = 0;
 
               return SliverPadding(
                 padding: const EdgeInsets.all(AppSpacing.screenPadding),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     if (active.isNotEmpty) ...[
-                      Text('Active Goals',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700)),
+                      Text(
+                        'Active Goals',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
                       const SizedBox(height: AppSpacing.md),
-                      ...active.map((g) => Padding(
-                            padding:
-                                const EdgeInsets.only(bottom: AppSpacing.md),
+                      ...active.map(
+                        (g) => Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                          child: AnimatedListItem(
+                            index: animationIndex++,
                             child: GoalCard(
                               goal: g,
-                              onTap: () => context.go(
-                                  '${AppRoutes.goals}/${g.id}'),
+                              onTap: () =>
+                                  context.go('${AppRoutes.goals}/${g.id}'),
                             ),
-                          )),
+                          ),
+                        ),
+                      ),
                     ],
                     if (completed.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.md),
-                      Text('Completed',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700)),
+                      Text(
+                        'Completed',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
                       const SizedBox(height: AppSpacing.md),
-                      ...completed.map((g) => Padding(
-                            padding:
-                                const EdgeInsets.only(bottom: AppSpacing.md),
+                      ...completed.map(
+                        (g) => Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                          child: AnimatedListItem(
+                            index: animationIndex++,
                             child: GoalCard(
                               goal: g,
-                              onTap: () => context.go(
-                                  '${AppRoutes.goals}/${g.id}'),
+                              onTap: () =>
+                                  context.go('${AppRoutes.goals}/${g.id}'),
                             ),
-                          )),
+                          ),
+                        ),
+                      ),
                     ],
                   ]),
                 ),

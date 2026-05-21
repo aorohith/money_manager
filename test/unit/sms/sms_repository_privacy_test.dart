@@ -79,8 +79,11 @@ void main() {
     final stored = await isar.smsParsedTransactions.get(id);
     expect(stored, isNotNull);
     expect(stored!.status, SmsReviewStatus.skipped);
-    expect(stored.rawText, isEmpty,
-        reason: 'rawText must be cleared once the user has reviewed the row.');
+    expect(
+      stored.rawText,
+      isEmpty,
+      reason: 'rawText must be cleared once the user has reviewed the row.',
+    );
   });
 
   test('updateStatus back to pending leaves rawText untouched', () async {
@@ -95,8 +98,7 @@ void main() {
     expect(stored!.rawText, isNotEmpty);
   });
 
-  test('approveTransaction clears rawText and links the transaction',
-      () async {
+  test('approveTransaction clears rawText and links the transaction', () async {
     late int smsId;
     await isar.writeTxn(() async {
       smsId = await isar.smsParsedTransactions.put(seed());
@@ -119,53 +121,97 @@ void main() {
     expect(stored.rawText, isEmpty);
   });
 
-  test('pruneOldParsedTransactions deletes stale reviewed and pending rows',
-      () async {
-    final now = DateTime.now();
+  test(
+    'undoApproval soft-deletes transaction and restores pending SMS',
+    () async {
+      late int smsId;
+      await isar.writeTxn(() async {
+        smsId = await isar.smsParsedTransactions.put(seed());
+      });
 
-    await isar.writeTxn(() async {
-      // Reviewed 60 days ago — should be deleted (reviewedTtl = 30d).
-      await isar.smsParsedTransactions.put(seed(
-        status: SmsReviewStatus.approved,
-        updatedAt: now.subtract(const Duration(days: 60)),
-      ));
-      // Reviewed 5 days ago — keep.
-      await isar.smsParsedTransactions.put(seed(
-        status: SmsReviewStatus.approved,
-        updatedAt: now.subtract(const Duration(days: 5)),
-      ));
-      // Pending 100 days ago — should be deleted (pendingTtl = 90d).
-      await isar.smsParsedTransactions.put(seed(
-        status: SmsReviewStatus.pending,
-        detectedAt: now.subtract(const Duration(days: 100)),
-      ));
-      // Pending 10 days ago — keep.
-      await isar.smsParsedTransactions.put(seed(
-        status: SmsReviewStatus.pending,
-        detectedAt: now.subtract(const Duration(days: 10)),
-      ));
-    });
+      final txId = await repo.approveTransaction(
+        smsId: smsId,
+        tx: TransactionModel(
+          amount: 500,
+          categoryId: 1,
+          accountId: 1,
+          date: DateTime(2026, 5, 1),
+          isIncome: false,
+        ),
+      );
 
-    await repo.pruneOldParsedTransactions();
+      await repo.undoApproval(
+        smsId: smsId,
+        transactionId: txId,
+        rawText: 'A/C XX1234 debited Rs.500 at SWIGGY',
+      );
 
-    final remaining = await isar.smsParsedTransactions.where().findAll();
-    expect(remaining, hasLength(2));
-    expect(
-      remaining.where((r) => r.status == SmsReviewStatus.approved).length,
-      1,
-    );
-    expect(
-      remaining.where((r) => r.status == SmsReviewStatus.pending).length,
-      1,
-    );
-  });
+      final sms = await isar.smsParsedTransactions.get(smsId);
+      final tx = await isar.transactionModels.get(txId);
+      expect(sms!.status, SmsReviewStatus.pending);
+      expect(sms.linkedTransactionId, isNull);
+      expect(sms.rawText, isNotEmpty);
+      expect(tx!.isDeleted, isTrue);
+    },
+  );
+
+  test(
+    'pruneOldParsedTransactions deletes stale reviewed and pending rows',
+    () async {
+      final now = DateTime.now();
+
+      await isar.writeTxn(() async {
+        // Reviewed 60 days ago — should be deleted (reviewedTtl = 30d).
+        await isar.smsParsedTransactions.put(
+          seed(
+            status: SmsReviewStatus.approved,
+            updatedAt: now.subtract(const Duration(days: 60)),
+          ),
+        );
+        // Reviewed 5 days ago — keep.
+        await isar.smsParsedTransactions.put(
+          seed(
+            status: SmsReviewStatus.approved,
+            updatedAt: now.subtract(const Duration(days: 5)),
+          ),
+        );
+        // Pending 100 days ago — should be deleted (pendingTtl = 90d).
+        await isar.smsParsedTransactions.put(
+          seed(
+            status: SmsReviewStatus.pending,
+            detectedAt: now.subtract(const Duration(days: 100)),
+          ),
+        );
+        // Pending 10 days ago — keep.
+        await isar.smsParsedTransactions.put(
+          seed(
+            status: SmsReviewStatus.pending,
+            detectedAt: now.subtract(const Duration(days: 10)),
+          ),
+        );
+      });
+
+      await repo.pruneOldParsedTransactions();
+
+      final remaining = await isar.smsParsedTransactions.where().findAll();
+      expect(remaining, hasLength(2));
+      expect(
+        remaining.where((r) => r.status == SmsReviewStatus.approved).length,
+        1,
+      );
+      expect(
+        remaining.where((r) => r.status == SmsReviewStatus.pending).length,
+        1,
+      );
+    },
+  );
 }
 
 String _isarLibraryPath() {
   final extension = Platform.isWindows
       ? 'dll'
       : Platform.isMacOS
-          ? 'dylib'
-          : 'so';
+      ? 'dylib'
+      : 'so';
   return '${Directory.systemTemp.path}/libisar_sms_repo_tests.$extension';
 }

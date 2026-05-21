@@ -69,9 +69,12 @@ class ManageAccountsScreen extends ConsumerWidget {
                 ),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    (_, i) => _AccountTile(
-                      account: accounts[i],
-                      currencySymbol: currencySymbol,
+                    (_, i) => AnimatedListItem(
+                      index: i,
+                      child: _AccountTile(
+                        account: accounts[i],
+                        currencySymbol: currencySymbol,
+                      ),
                     ),
                     childCount: accounts.length,
                   ),

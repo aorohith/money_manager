@@ -44,8 +44,9 @@ class SmsIngestionService {
   /// Returns true if the NotificationListenerService is enabled in settings.
   static Future<bool> isNotificationListenerEnabled() async {
     try {
-      final result =
-          await _channel.invokeMethod<bool>('isNotificationListenerEnabled');
+      final result = await _channel.invokeMethod<bool>(
+        'isNotificationListenerEnabled',
+      );
       return result ?? false;
     } on PlatformException {
       return false;
@@ -58,6 +59,61 @@ class SmsIngestionService {
       await _channel.invokeMethod('openNotificationSettings');
     } on PlatformException {
       // ignore if not available (iOS, etc.)
+    }
+  }
+
+  /// Requests Android to replay currently visible trusted banking/payment
+  /// notifications through the normal ingestion pipeline.
+  ///
+  /// Returns the number of notifications Android dispatched for processing.
+  /// The actual parsed expenses may be fewer because parsing and duplicate
+  /// checks still run on the Dart side.
+  static Future<int> syncActiveNotifications() async {
+    try {
+      return await _channel.invokeMethod<int>('syncActiveNotifications') ?? 0;
+    } on PlatformException {
+      return 0;
+    }
+  }
+
+  /// Reads recent SMS inbox messages from Android and feeds likely transaction
+  /// messages through the same parse/dedup/categorise queue as live alerts.
+  Future<SmsSyncResult> syncInbox({int limit = 250}) async {
+    try {
+      final result = await _channel.invokeMapMethod<String, dynamic>(
+        'syncSmsInbox',
+        {'limit': limit},
+      );
+      final granted = result?['granted'] as bool? ?? false;
+      final rawMessages = result?['messages'] as List<dynamic>? ?? const [];
+      if (!granted) {
+        return const SmsSyncResult(permissionGranted: false);
+      }
+
+      var queued = 0;
+      for (final raw in rawMessages) {
+        final message = Map<String, dynamic>.from(raw as Map);
+        final processed = await _processNotification(
+          sender: message['sender'] as String? ?? '',
+          title: message['title'] as String? ?? '',
+          body: message['body'] as String? ?? '',
+          date: DateTime.fromMillisecondsSinceEpoch(
+            message['timestamp'] as int? ??
+                DateTime.now().millisecondsSinceEpoch,
+          ),
+          bypassRateLimit: true,
+          showDetectedNotification: false,
+        );
+        if (processed) queued++;
+      }
+
+      return SmsSyncResult(
+        permissionGranted: true,
+        scannedMessages: rawMessages.length,
+        queuedTransactions: queued,
+      );
+    } on PlatformException {
+      return const SmsSyncResult(permissionGranted: false);
     }
   }
 
@@ -108,6 +164,7 @@ class SmsIngestionService {
               'from "$sender": $e',
               stackTrace: st,
             );
+            return false;
           }),
         );
       default:
@@ -118,16 +175,18 @@ class SmsIngestionService {
 
   // ── Internal pipeline ──────────────────────────────────────────────────────
 
-  Future<void> _processNotification({
+  Future<bool> _processNotification({
     required String sender,
     required String title,
     required String body,
     required DateTime date,
+    bool bypassRateLimit = false,
+    bool showDetectedNotification = true,
   }) async {
     // ── Rate limit ─────────────────────────────────────────────────────────
-    if (_isRateLimited()) {
+    if (!bypassRateLimit && _isRateLimited()) {
       log('SmsIngestionService: rate limit exceeded, dropping notification');
-      return;
+      return false;
     }
 
     // ── Sender sanity check ────────────────────────────────────────────────
@@ -135,20 +194,25 @@ class SmsIngestionService {
     // The Kotlin side already filters by trusted app packages; this is an
     // additional defence-in-depth layer.
     if (sender.length < 2 || RegExp(r'^\d+$').hasMatch(sender)) {
-      log('SmsIngestionService: rejected notification from invalid sender "$sender"');
-      return;
+      log(
+        'SmsIngestionService: rejected notification from invalid sender "$sender"',
+      );
+      return false;
     }
 
     // ── Parse ──────────────────────────────────────────────────────────────
     final fullText = '$title $body'.trim();
     final parsed = _parser.parse(fullText, overrideDate: date);
-    if (parsed == null) return; // Not a banking transaction
+    if (parsed == null) return false; // Not a banking transaction
 
     // ── Atomic duplicate check + fingerprint log ───────────────────────────
     final fingerprint = TransactionParser.buildFingerprint(
-        parsed.amount, parsed.merchantNormalized, date);
+      parsed.amount,
+      parsed.merchantNormalized,
+      date,
+    );
     final isNew = await _repo.logFingerprintIfNew(fingerprint, sender);
-    if (!isNew) return; // Already processed this transaction
+    if (!isNew) return false; // Already processed this transaction
 
     // ── Fetch user rule (before categorization) ────────────────────────────
     final userRule = await _repo.findRule(parsed.merchantNormalized);
@@ -183,24 +247,39 @@ class SmsIngestionService {
     await _repo.addParsedTransaction(record);
 
     // ── Show notification badge ────────────────────────────────────────────
+    if (!showDetectedNotification) return true;
     final cat = expenseCategories
         .where((c) => c.id == result.categoryId)
         .firstOrNull;
-    unawaited(NotificationService.instance.showSmsDetectedAlert(
-      merchant: parsed.merchantNormalized,
-      amount: parsed.amount,
-      categoryName: cat?.name ?? 'Uncategorised',
-    ));
+    unawaited(
+      NotificationService.instance.showSmsDetectedAlert(
+        merchant: parsed.merchantNormalized,
+        amount: parsed.amount,
+        categoryName: cat?.name ?? 'Uncategorised',
+      ),
+    );
+    return true;
   }
 
   // ── Rate limiter ───────────────────────────────────────────────────────────
 
   bool _isRateLimited() {
     final now = DateTime.now().millisecondsSinceEpoch;
-    _recentTimestamps
-        .removeWhere((t) => now - t > _rateWindowMs);
+    _recentTimestamps.removeWhere((t) => now - t > _rateWindowMs);
     if (_recentTimestamps.length >= _rateLimit) return true;
     _recentTimestamps.add(now);
     return false;
   }
+}
+
+class SmsSyncResult {
+  const SmsSyncResult({
+    required this.permissionGranted,
+    this.scannedMessages = 0,
+    this.queuedTransactions = 0,
+  });
+
+  final bool permissionGranted;
+  final int scannedMessages;
+  final int queuedTransactions;
 }
