@@ -132,4 +132,33 @@ void main() {
       expect(result.source, CategorizationSource.fallback);
     });
   });
+
+  group('income categorization', () {
+    test('categorizes credit transactions with income categories', () {
+      final cats = [
+        _cat(1, 'Salary', isIncome: true),
+        _cat(2, 'Food & Dining', isIncome: false),
+      ];
+      final result = engine.categorize(
+        'SALARY',
+        cats,
+        isIncome: true,
+      );
+      expect(result.categoryId, 1);
+    });
+
+    test('excludes expense categories when categorizing income', () {
+      final cats = [
+        _cat(2, 'Food & Dining', isIncome: false),
+      ];
+      final result = engine.categorize(
+        'SWIGGY',
+        cats,
+        isIncome: true,
+      );
+      // Should not match Food & Dining since it is an expense category
+      expect(result.categoryId, 0);
+      expect(result.source, CategorizationSource.fallback);
+    });
+  });
 }

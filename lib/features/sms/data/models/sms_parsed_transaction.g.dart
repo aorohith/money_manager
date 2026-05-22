@@ -43,59 +43,64 @@ const SmsParsedTransactionSchema = CollectionSchema(
       name: r'detectedAt',
       type: IsarType.dateTime,
     ),
-    r'linkedTransactionId': PropertySchema(
+    r'isIncome': PropertySchema(
       id: 5,
+      name: r'isIncome',
+      type: IsarType.bool,
+    ),
+    r'linkedTransactionId': PropertySchema(
+      id: 6,
       name: r'linkedTransactionId',
       type: IsarType.long,
     ),
     r'merchantNormalized': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'merchantNormalized',
       type: IsarType.string,
     ),
     r'merchantRaw': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'merchantRaw',
       type: IsarType.string,
     ),
     r'paymentMethod': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'paymentMethod',
       type: IsarType.string,
     ),
     r'rawText': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'rawText',
       type: IsarType.string,
     ),
     r'referenceNumber': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'referenceNumber',
       type: IsarType.string,
     ),
     r'senderAddress': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'senderAddress',
       type: IsarType.string,
     ),
     r'status': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'status',
       type: IsarType.byte,
       enumMap: _SmsParsedTransactionstatusEnumValueMap,
     ),
     r'suggestedCategoryId': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'suggestedCategoryId',
       type: IsarType.long,
     ),
     r'transactionDate': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'transactionDate',
       type: IsarType.dateTime,
     ),
     r'updatedAt': PropertySchema(
-      id: 15,
+      id: 16,
       name: r'updatedAt',
       type: IsarType.dateTime,
     )
@@ -140,6 +145,19 @@ const SmsParsedTransactionSchema = CollectionSchema(
       properties: [
         IndexPropertySchema(
           name: r'transactionDate',
+          type: IndexType.value,
+          caseSensitive: false,
+        )
+      ],
+    ),
+    r'isIncome': IndexSchema(
+      id: 8600847597078158182,
+      name: r'isIncome',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'isIncome',
           type: IndexType.value,
           caseSensitive: false,
         )
@@ -191,17 +209,18 @@ void _smsParsedTransactionSerialize(
   writer.writeDouble(offsets[2], object.availableBalance);
   writer.writeDouble(offsets[3], object.confidence);
   writer.writeDateTime(offsets[4], object.detectedAt);
-  writer.writeLong(offsets[5], object.linkedTransactionId);
-  writer.writeString(offsets[6], object.merchantNormalized);
-  writer.writeString(offsets[7], object.merchantRaw);
-  writer.writeString(offsets[8], object.paymentMethod);
-  writer.writeString(offsets[9], object.rawText);
-  writer.writeString(offsets[10], object.referenceNumber);
-  writer.writeString(offsets[11], object.senderAddress);
-  writer.writeByte(offsets[12], object.status.index);
-  writer.writeLong(offsets[13], object.suggestedCategoryId);
-  writer.writeDateTime(offsets[14], object.transactionDate);
-  writer.writeDateTime(offsets[15], object.updatedAt);
+  writer.writeBool(offsets[5], object.isIncome);
+  writer.writeLong(offsets[6], object.linkedTransactionId);
+  writer.writeString(offsets[7], object.merchantNormalized);
+  writer.writeString(offsets[8], object.merchantRaw);
+  writer.writeString(offsets[9], object.paymentMethod);
+  writer.writeString(offsets[10], object.rawText);
+  writer.writeString(offsets[11], object.referenceNumber);
+  writer.writeString(offsets[12], object.senderAddress);
+  writer.writeByte(offsets[13], object.status.index);
+  writer.writeLong(offsets[14], object.suggestedCategoryId);
+  writer.writeDateTime(offsets[15], object.transactionDate);
+  writer.writeDateTime(offsets[16], object.updatedAt);
 }
 
 SmsParsedTransaction _smsParsedTransactionDeserialize(
@@ -215,22 +234,23 @@ SmsParsedTransaction _smsParsedTransactionDeserialize(
     amount: reader.readDouble(offsets[1]),
     availableBalance: reader.readDoubleOrNull(offsets[2]),
     confidence: reader.readDoubleOrNull(offsets[3]),
-    linkedTransactionId: reader.readLongOrNull(offsets[5]),
-    merchantNormalized: reader.readString(offsets[6]),
-    merchantRaw: reader.readString(offsets[7]),
-    paymentMethod: reader.readString(offsets[8]),
-    rawText: reader.readString(offsets[9]),
-    referenceNumber: reader.readStringOrNull(offsets[10]),
-    senderAddress: reader.readString(offsets[11]),
+    isIncome: reader.readBoolOrNull(offsets[5]) ?? false,
+    linkedTransactionId: reader.readLongOrNull(offsets[6]),
+    merchantNormalized: reader.readString(offsets[7]),
+    merchantRaw: reader.readString(offsets[8]),
+    paymentMethod: reader.readString(offsets[9]),
+    rawText: reader.readString(offsets[10]),
+    referenceNumber: reader.readStringOrNull(offsets[11]),
+    senderAddress: reader.readString(offsets[12]),
     status: _SmsParsedTransactionstatusValueEnumMap[
-            reader.readByteOrNull(offsets[12])] ??
+            reader.readByteOrNull(offsets[13])] ??
         SmsReviewStatus.pending,
-    suggestedCategoryId: reader.readLongOrNull(offsets[13]),
-    transactionDate: reader.readDateTime(offsets[14]),
+    suggestedCategoryId: reader.readLongOrNull(offsets[14]),
+    transactionDate: reader.readDateTime(offsets[15]),
   );
   object.detectedAt = reader.readDateTime(offsets[4]);
   object.id = id;
-  object.updatedAt = reader.readDateTime(offsets[15]);
+  object.updatedAt = reader.readDateTime(offsets[16]);
   return object;
 }
 
@@ -252,9 +272,9 @@ P _smsParsedTransactionDeserializeProp<P>(
     case 4:
       return (reader.readDateTime(offset)) as P;
     case 5:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readBoolOrNull(offset) ?? false) as P;
     case 6:
-      return (reader.readString(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 7:
       return (reader.readString(offset)) as P;
     case 8:
@@ -262,18 +282,20 @@ P _smsParsedTransactionDeserializeProp<P>(
     case 9:
       return (reader.readString(offset)) as P;
     case 10:
-      return (reader.readStringOrNull(offset)) as P;
-    case 11:
       return (reader.readString(offset)) as P;
+    case 11:
+      return (reader.readStringOrNull(offset)) as P;
     case 12:
+      return (reader.readString(offset)) as P;
+    case 13:
       return (_SmsParsedTransactionstatusValueEnumMap[
               reader.readByteOrNull(offset)] ??
           SmsReviewStatus.pending) as P;
-    case 13:
-      return (reader.readLongOrNull(offset)) as P;
     case 14:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 15:
+      return (reader.readDateTime(offset)) as P;
+    case 16:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -330,6 +352,15 @@ extension SmsParsedTransactionQueryWhereSort
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         const IndexWhereClause.any(indexName: r'transactionDate'),
+      );
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterWhere>
+      anyIsIncome() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'isIncome'),
       );
     });
   }
@@ -633,6 +664,51 @@ extension SmsParsedTransactionQueryWhere
         upper: [upperTransactionDate],
         includeUpper: includeUpper,
       ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterWhereClause>
+      isIncomeEqualTo(bool isIncome) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'isIncome',
+        value: [isIncome],
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterWhereClause>
+      isIncomeNotEqualTo(bool isIncome) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'isIncome',
+              lower: [],
+              upper: [isIncome],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'isIncome',
+              lower: [isIncome],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'isIncome',
+              lower: [isIncome],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'isIncome',
+              lower: [],
+              upper: [isIncome],
+              includeUpper: false,
+            ));
+      }
     });
   }
 }
@@ -1137,6 +1213,16 @@ extension SmsParsedTransactionQueryFilter on QueryBuilder<SmsParsedTransaction,
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> isIncomeEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isIncome',
+        value: value,
       ));
     });
   }
@@ -2383,6 +2469,20 @@ extension SmsParsedTransactionQuerySortBy
   }
 
   QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      sortByIsIncome() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isIncome', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      sortByIsIncomeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isIncome', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
       sortByLinkedTransactionId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'linkedTransactionId', Sort.asc);
@@ -2624,6 +2724,20 @@ extension SmsParsedTransactionQuerySortThenBy
   }
 
   QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      thenByIsIncome() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isIncome', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      thenByIsIncomeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isIncome', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
       thenByLinkedTransactionId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'linkedTransactionId', Sort.asc);
@@ -2816,6 +2930,13 @@ extension SmsParsedTransactionQueryWhereDistinct
   }
 
   QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QDistinct>
+      distinctByIsIncome() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isIncome');
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QDistinct>
       distinctByLinkedTransactionId() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'linkedTransactionId');
@@ -2937,6 +3058,13 @@ extension SmsParsedTransactionQueryProperty on QueryBuilder<
       detectedAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'detectedAt');
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, bool, QQueryOperations>
+      isIncomeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isIncome');
     });
   }
 

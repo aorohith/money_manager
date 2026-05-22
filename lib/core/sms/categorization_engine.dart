@@ -37,9 +37,10 @@ class CategorizationEngine {
     String merchantKey,
     List<CategoryModel> categories, {
     SmsRuleModel? userRule,
+    bool isIncome = false,
   }) {
-    final expenseCategories =
-        categories.where((c) => !c.isIncome).toList();
+    final targetCategories =
+        categories.where((c) => c.isIncome == isIncome).toList();
 
     // ── Tier 1: user rule ──────────────────────────────────────────────────
     if (userRule != null) {
@@ -53,7 +54,7 @@ class CategorizationEngine {
     // ── Tier 2: built-in merchant database ─────────────────────────────────
     final dbCategoryName = _lookupMerchantDb(merchantKey);
     if (dbCategoryName != null) {
-      final cat = _findByName(expenseCategories, dbCategoryName);
+      final cat = _findByName(targetCategories, dbCategoryName);
       if (cat != null) {
         return CategorizationResult(
           categoryId: cat.id,
@@ -66,7 +67,7 @@ class CategorizationEngine {
     // ── Tier 3: keyword matching ───────────────────────────────────────────
     final keywordCategoryName = _lookupKeywords(merchantKey);
     if (keywordCategoryName != null) {
-      final cat = _findByName(expenseCategories, keywordCategoryName);
+      final cat = _findByName(targetCategories, keywordCategoryName);
       if (cat != null) {
         return CategorizationResult(
           categoryId: cat.id,
@@ -77,8 +78,8 @@ class CategorizationEngine {
     }
 
     // ── Tier 4: fallback to "Other" ────────────────────────────────────────
-    final other = _findByName(expenseCategories, 'Other') ??
-        expenseCategories.firstOrNull;
+    final other = _findByName(targetCategories, 'Other') ??
+        targetCategories.firstOrNull;
     return CategorizationResult(
       categoryId: other?.id ?? 0,
       confidence: 0.30,

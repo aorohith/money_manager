@@ -133,7 +133,7 @@ class SmsIngestionService {
       categoryId: categoryId,
       accountId: accountId,
       date: pending.transactionDate,
-      isIncome: false,
+      isIncome: pending.isIncome,
       note: note ?? pending.merchantRaw,
     );
     return _repo.approveTransaction(smsId: pending.id, tx: tx);
@@ -219,11 +219,11 @@ class SmsIngestionService {
 
     // ── Categorise ─────────────────────────────────────────────────────────
     final categories = await _isar.categoryModels.where().findAll();
-    final expenseCategories = categories.where((c) => !c.isIncome).toList();
     final result = _categorizer.categorize(
       parsed.merchantNormalized,
-      expenseCategories,
+      categories,
       userRule: userRule,
+      isIncome: parsed.isIncome,
     );
 
     // ── Redact sensitive data before storage ───────────────────────────────
@@ -243,12 +243,13 @@ class SmsIngestionService {
       referenceNumber: parsed.referenceNumber,
       suggestedCategoryId: result.categoryId,
       confidence: result.confidence,
+      isIncome: parsed.isIncome,
     );
     await _repo.addParsedTransaction(record);
 
     // ── Show notification badge ────────────────────────────────────────────
     if (!showDetectedNotification) return true;
-    final cat = expenseCategories
+    final cat = categories
         .where((c) => c.id == result.categoryId)
         .firstOrNull;
     unawaited(

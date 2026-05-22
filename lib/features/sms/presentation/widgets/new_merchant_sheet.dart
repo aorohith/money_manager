@@ -32,6 +32,7 @@ class _NewMerchantSheet extends ConsumerStatefulWidget {
 }
 
 class _NewMerchantSheetState extends ConsumerState<_NewMerchantSheet> {
+  late bool _isIncome;
   int? _selectedCategoryId;
   bool _alwaysApply = false;
   bool _saving = false;
@@ -39,12 +40,15 @@ class _NewMerchantSheetState extends ConsumerState<_NewMerchantSheet> {
   @override
   void initState() {
     super.initState();
+    _isIncome = widget.pending.isIncome;
     _selectedCategoryId = widget.pending.suggestedCategoryId;
   }
 
   @override
   Widget build(BuildContext context) {
-    final categoriesAsync = ref.watch(expenseCategoriesProvider);
+    final categoriesAsync = ref.watch(
+      _isIncome ? incomeCategoriesProvider : expenseCategoriesProvider,
+    );
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
@@ -107,6 +111,35 @@ class _NewMerchantSheetState extends ConsumerState<_NewMerchantSheet> {
           ),
 
           const SizedBox(height: AppSpacing.md),
+
+          // Income / Expense toggle
+          Semantics(
+            label: _isIncome ? 'Income selected' : 'Expense selected',
+            child: SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(
+                    value: false,
+                    label: Text('Expense'),
+                    icon: Icon(Icons.arrow_upward_rounded),
+                  ),
+                  ButtonSegment(
+                    value: true,
+                    label: Text('Income'),
+                    icon: Icon(Icons.arrow_downward_rounded),
+                  ),
+                ],
+                selected: {_isIncome},
+                onSelectionChanged: (s) => setState(() {
+                  _isIncome = s.first;
+                  _selectedCategoryId = null;
+                }),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.md),
           Text(
             'Select category',
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
@@ -124,7 +157,9 @@ class _NewMerchantSheetState extends ConsumerState<_NewMerchantSheet> {
               categories: cats,
               selectedId: _selectedCategoryId,
               onSelected: (id) => setState(() => _selectedCategoryId = id),
-              suggestedId: widget.pending.suggestedCategoryId,
+              suggestedId: _isIncome == widget.pending.isIncome
+                  ? widget.pending.suggestedCategoryId
+                  : null,
             ),
             loading: () =>
                 const ShimmerBox(width: double.infinity, height: 100, borderRadius: 12),
@@ -248,7 +283,7 @@ class _NewMerchantSheetState extends ConsumerState<_NewMerchantSheet> {
       categoryId: _selectedCategoryId!,
       accountId: account.id,
       date: pending.transactionDate,
-      isIncome: false,
+      isIncome: _isIncome,
       note: pending.merchantRaw,
     );
 

@@ -20,6 +20,7 @@ class SmsParsedTransaction {
     this.confidence,
     this.status = SmsReviewStatus.pending,
     this.linkedTransactionId,
+    this.isIncome = false,
   });
 
   Id id = Isar.autoIncrement;
@@ -58,6 +59,9 @@ class SmsParsedTransaction {
 
   /// 0.0 – 1.0. Reflects categorization engine confidence.
   double? confidence;
+
+  @Index()
+  late bool isIncome;
 
   DateTime detectedAt = DateTime.now();
   DateTime updatedAt = DateTime.now();

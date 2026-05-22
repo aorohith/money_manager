@@ -79,6 +79,9 @@ class TransactionParser {
     caseSensitive: false,
   );
 
+  /// Matches a UPI VPA "@handle" suffix (e.g. @ybl, @okhdfcbank) to strip it.
+  static final _vpaSuffixRe = RegExp(r'@[A-Za-z0-9]+$');
+
   // ── Merchant — Card ("at MERCHANT on") ───────────────────────────────────
 
   static final _cardAtRe = RegExp(
@@ -193,7 +196,7 @@ class TransactionParser {
     // 1. UPI pattern
     final upiMatch = _upiToRe.firstMatch(text);
     if (upiMatch != null) {
-      final m = upiMatch.group(1)?.trim() ?? '';
+      final m = _stripVpaSuffix(upiMatch.group(1)?.trim() ?? '');
       if (m.isNotEmpty && !_looksLikeNoise(m)) return m;
     }
 
@@ -207,11 +210,16 @@ class TransactionParser {
     // 3. "to MERCHANT" fallback
     final toMatch = _toMerchantRe.firstMatch(text);
     if (toMatch != null) {
-      final m = toMatch.group(1)?.trim() ?? '';
+      final m = _stripVpaSuffix(toMatch.group(1)?.trim() ?? '');
       if (m.isNotEmpty && !_looksLikeNoise(m)) return m;
     }
 
     return 'Unknown Merchant';
+  }
+
+  /// Strips UPI VPA bank-handle suffix (e.g. "SWIGGYIN@YBL" → "SWIGGYIN").
+  String _stripVpaSuffix(String merchant) {
+    return merchant.replaceFirst(_vpaSuffixRe, '').trim();
   }
 
   bool _looksLikeNoise(String s) {
@@ -255,7 +263,11 @@ class TransactionParser {
   }
 
   /// Returns a normalised merchant key (public helper used by the engine).
-  static String normalizeKey(String raw) => _normalize(raw);
+  /// Also strips UPI VPA @suffix before normalization.
+  static String normalizeKey(String raw) {
+    final stripped = raw.replaceFirst(RegExp(r'@[A-Za-z0-9]+$'), '').trim();
+    return _normalize(stripped);
+  }
 
   /// Redacts full card numbers and long account number sequences from raw
   /// notification text before storing it.  Amounts, merchant names, and

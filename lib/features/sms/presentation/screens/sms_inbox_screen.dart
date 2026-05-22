@@ -17,7 +17,7 @@ class SmsInboxScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pendingAsync = ref.watch(smsPendingProvider);
-    final categoriesAsync = ref.watch(expenseCategoriesProvider);
+    final categoriesAsync = ref.watch(categoriesProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -114,7 +114,7 @@ class SmsInboxScreen extends ConsumerWidget {
       categoryId: categoryId,
       accountId: account.id,
       date: item.transactionDate,
-      isIncome: false,
+      isIncome: item.isIncome,
       note: item.merchantRaw,
     );
 
@@ -327,7 +327,9 @@ class _SmsTransactionTileState extends State<_SmsTransactionTile> {
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
                               fontWeight: FontWeight.w700,
-                              color: AppColors.expense,
+                              color: widget.item.isIncome
+                                  ? AppColors.income
+                                  : AppColors.expense,
                             ),
                       ),
                       if (cat != null)
@@ -467,7 +469,7 @@ class _SmsTransactionTileState extends State<_SmsTransactionTile> {
                               : Text(
                                   key: const ValueKey('classify-label'),
                                   isHighConfidence
-                                      ? '✓ Save as ${cat?.name ?? "Expense"}'
+                                      ? '✓ Save as ${cat?.name ?? (widget.item.isIncome ? "Income" : "Expense")}'
                                       : 'Classify',
                                   style: const TextStyle(
                                     fontSize: 13,
