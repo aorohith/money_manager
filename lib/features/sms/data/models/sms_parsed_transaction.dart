@@ -1,4 +1,5 @@
 import 'package:isar/isar.dart';
+import 'package:money_manager/core/sms/sms_parser_types.dart';
 
 part 'sms_parsed_transaction.g.dart';
 
@@ -21,6 +22,11 @@ class SmsParsedTransaction {
     this.status = SmsReviewStatus.pending,
     this.linkedTransactionId,
     this.isIncome = false,
+    this.directionConfidence,
+    this.directionSignals,
+    this.merchantExtractionSource,
+    this.counterpartyType = SmsCounterpartyType.unknown,
+    this.isRecurring = false,
   });
 
   Id id = Isar.autoIncrement;
@@ -62,6 +68,20 @@ class SmsParsedTransaction {
 
   @Index()
   late bool isIncome;
+
+  /// 0.0–1.0. How confident the parser is about expense vs income.
+  double? directionConfidence;
+
+  /// Comma-separated direction signals matched in the raw message.
+  String? directionSignals;
+
+  /// Parser strategy label, e.g. "upiTo", "infoBlock".
+  String? merchantExtractionSource;
+
+  @enumerated
+  SmsCounterpartyType counterpartyType = SmsCounterpartyType.unknown;
+
+  bool isRecurring = false;
 
   DateTime detectedAt = DateTime.now();
   DateTime updatedAt = DateTime.now();

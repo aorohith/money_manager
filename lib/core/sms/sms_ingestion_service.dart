@@ -7,10 +7,13 @@ import 'package:money_manager/core/constants/constants.dart';
 
 import '../../features/sms/data/models/sms_parsed_transaction.dart';
 import '../../features/sms/data/repositories/sms_repository.dart';
+import '../../features/sms/domain/models/sms_settings.dart';
 import '../../features/transactions/data/models/category_model.dart';
 import '../../features/transactions/data/models/transaction_model.dart';
 import '../notifications/notification_service.dart';
 import 'categorization_engine.dart';
+import 'sms_account_resolver.dart';
+import 'sms_auto_add_policy.dart';
 import 'transaction_parser.dart';
 
 /// Coordinates the full SMS ingestion pipeline:
@@ -27,21 +30,14 @@ class SmsIngestionService {
   static const _parser = TransactionParser.instance;
   static const _categorizer = CategorizationEngine();
 
-  // ── Rate limiting ──────────────────────────────────────────────────────────
-  // Max 20 notifications per 60-second sliding window.
   static const _rateLimit = 20;
   static const _rateWindowMs = 60000;
   final _recentTimestamps = <int>[];
 
-  // ── Public API ─────────────────────────────────────────────────────────────
-
-  /// Wires up the MethodChannel handler.
-  /// Call once from [main], before [runApp].
   void initialize() {
     _channel.setMethodCallHandler(_onMethodCall);
   }
 
-  /// Returns true if the NotificationListenerService is enabled in settings.
   static Future<bool> isNotificationListenerEnabled() async {
     try {
       final result = await _channel.invokeMethod<bool>(
@@ -53,7 +49,6 @@ class SmsIngestionService {
     }
   }
 
-  /// Opens Android → Settings → Notification Access.
   static Future<void> openNotificationSettings() async {
     try {
       await _channel.invokeMethod('openNotificationSettings');
@@ -62,12 +57,6 @@ class SmsIngestionService {
     }
   }
 
-  /// Requests Android to replay currently visible trusted banking/payment
-  /// notifications through the normal ingestion pipeline.
-  ///
-  /// Returns the number of notifications Android dispatched for processing.
-  /// The actual parsed expenses may be fewer because parsing and duplicate
-  /// checks still run on the Dart side.
   static Future<int> syncActiveNotifications() async {
     try {
       return await _channel.invokeMethod<int>('syncActiveNotifications') ?? 0;
@@ -76,8 +65,6 @@ class SmsIngestionService {
     }
   }
 
-  /// Reads recent SMS inbox messages from Android and feeds likely transaction
-  /// messages through the same parse/dedup/categorise queue as live alerts.
   Future<SmsSyncResult> syncInbox({int limit = 250}) async {
     try {
       final result = await _channel.invokeMapMethod<String, dynamic>(
@@ -117,11 +104,6 @@ class SmsIngestionService {
     }
   }
 
-  /// Approves a pending [SmsParsedTransaction] and saves it as a real
-  /// [TransactionModel] with the selected [categoryId].
-  ///
-  /// Both writes are executed in a single Isar transaction so a crash
-  /// between them can never leave data in an inconsistent state.
   Future<int> approve({
     required SmsParsedTransaction pending,
     required int categoryId,
@@ -139,8 +121,6 @@ class SmsIngestionService {
     return _repo.approveTransaction(smsId: pending.id, tx: tx);
   }
 
-  // ── Platform ↔ Dart bridge ─────────────────────────────────────────────────
-
   Future<dynamic> _onMethodCall(MethodCall call) async {
     switch (call.method) {
       case 'onNotificationReceived':
@@ -151,7 +131,6 @@ class SmsIngestionService {
         final timestamp =
             args['timestamp'] as int? ?? DateTime.now().millisecondsSinceEpoch;
 
-        // Fire-and-forget but log errors so data loss is never silent
         unawaited(
           _processNotification(
             sender: sender,
@@ -173,8 +152,6 @@ class SmsIngestionService {
     return null;
   }
 
-  // ── Internal pipeline ──────────────────────────────────────────────────────
-
   Future<bool> _processNotification({
     required String sender,
     required String title,
@@ -183,16 +160,11 @@ class SmsIngestionService {
     bool bypassRateLimit = false,
     bool showDetectedNotification = true,
   }) async {
-    // ── Rate limit ─────────────────────────────────────────────────────────
     if (!bypassRateLimit && _isRateLimited()) {
       log('SmsIngestionService: rate limit exceeded, dropping notification');
       return false;
     }
 
-    // ── Sender sanity check ────────────────────────────────────────────────
-    // Reject obviously invalid senders (empty, single char, pure numbers).
-    // The Kotlin side already filters by trusted app packages; this is an
-    // additional defence-in-depth layer.
     if (sender.length < 2 || RegExp(r'^\d+$').hasMatch(sender)) {
       log(
         'SmsIngestionService: rejected notification from invalid sender "$sender"',
@@ -200,24 +172,28 @@ class SmsIngestionService {
       return false;
     }
 
-    // ── Parse ──────────────────────────────────────────────────────────────
     final fullText = '$title $body'.trim();
-    final parsed = _parser.parse(fullText, overrideDate: date);
-    if (parsed == null) return false; // Not a banking transaction
+    final settings = await _repo.loadSettings();
+    if (!settings.enabled) return false;
 
-    // ── Atomic duplicate check + fingerprint log ───────────────────────────
+    final parsed = _parser.parse(
+      fullText,
+      overrideDate: date,
+      detectRefunds: settings.detectRefunds,
+      detectSubscriptions: settings.detectSubscriptions,
+    );
+    if (parsed == null) return false;
+
     final fingerprint = TransactionParser.buildFingerprint(
       parsed.amount,
       parsed.merchantNormalized,
       date,
+      referenceNumber: parsed.referenceNumber,
     );
     final isNew = await _repo.logFingerprintIfNew(fingerprint, sender);
-    if (!isNew) return false; // Already processed this transaction
+    if (!isNew) return false;
 
-    // ── Fetch user rule (before categorization) ────────────────────────────
     final userRule = await _repo.findRule(parsed.merchantNormalized);
-
-    // ── Categorise ─────────────────────────────────────────────────────────
     final categories = await _isar.categoryModels.where().findAll();
     final result = _categorizer.categorize(
       parsed.merchantNormalized,
@@ -226,17 +202,15 @@ class SmsIngestionService {
       isIncome: parsed.isIncome,
     );
 
-    // ── Redact sensitive data before storage ───────────────────────────────
     final safeText = TransactionParser.redactSensitive(fullText);
 
-    // ── Save to pending queue ──────────────────────────────────────────────
     final record = SmsParsedTransaction(
       amount: parsed.amount,
       merchantRaw: parsed.merchantRaw,
       merchantNormalized: parsed.merchantNormalized,
       transactionDate: parsed.transactionDate,
       paymentMethod: parsed.paymentMethod,
-      rawText: safeText, // never stores unredacted card/account numbers
+      rawText: safeText,
       senderAddress: sender,
       accountHint: parsed.accountHint,
       availableBalance: parsed.availableBalance,
@@ -244,14 +218,61 @@ class SmsIngestionService {
       suggestedCategoryId: result.categoryId,
       confidence: result.confidence,
       isIncome: parsed.isIncome,
+      directionConfidence: parsed.directionConfidence,
+      directionSignals: parsed.directionSignals,
+      merchantExtractionSource: parsed.merchantExtractionSource?.name,
+      counterpartyType: parsed.counterpartyType,
+      isRecurring: parsed.isRecurring,
     );
+
+    final autoApprove = SmsAutoAddPolicy.shouldAutoApprove(
+      settings: settings,
+      parsed: parsed,
+      categoryConfidence: result.confidence,
+      userRule: userRule,
+    );
+
+    if (autoApprove) {
+      final accounts = await _isar.accountModels.where().findAll();
+      final account = SmsAccountResolver.resolve(
+        accounts: accounts,
+        accountHint: parsed.accountHint,
+      );
+      if (account != null) {
+        final smsId = await _repo.addParsedTransaction(record);
+        await _repo.approveTransaction(
+          smsId: smsId,
+          tx: TransactionModel(
+            amount: record.amount,
+            categoryId: result.categoryId,
+            accountId: account.id,
+            date: record.transactionDate,
+            isIncome: record.isIncome,
+            note: record.merchantRaw,
+          ),
+          merchantKey: parsed.merchantNormalized,
+          categoryId: result.categoryId,
+          alwaysApply: userRule != null,
+        );
+        if (showDetectedNotification) {
+          final cat =
+              categories.where((c) => c.id == result.categoryId).firstOrNull;
+          unawaited(
+            NotificationService.instance.showSmsDetectedAlert(
+              merchant: '${parsed.merchantNormalized} (saved)',
+              amount: parsed.amount,
+              categoryName: cat?.name ?? 'Uncategorised',
+            ),
+          );
+        }
+        return true;
+      }
+    }
+
     await _repo.addParsedTransaction(record);
 
-    // ── Show notification badge ────────────────────────────────────────────
     if (!showDetectedNotification) return true;
-    final cat = categories
-        .where((c) => c.id == result.categoryId)
-        .firstOrNull;
+    final cat = categories.where((c) => c.id == result.categoryId).firstOrNull;
     unawaited(
       NotificationService.instance.showSmsDetectedAlert(
         merchant: parsed.merchantNormalized,
@@ -262,14 +283,20 @@ class SmsIngestionService {
     return true;
   }
 
-  // ── Rate limiter ───────────────────────────────────────────────────────────
-
   bool _isRateLimited() {
     final now = DateTime.now().millisecondsSinceEpoch;
     _recentTimestamps.removeWhere((t) => now - t > _rateWindowMs);
     if (_recentTimestamps.length >= _rateLimit) return true;
     _recentTimestamps.add(now);
     return false;
+  }
+}
+
+extension _FirstOrNull<E> on Iterable<E> {
+  E? get firstOrNull {
+    final it = iterator;
+    if (!it.moveNext()) return null;
+    return it.current;
   }
 }
 

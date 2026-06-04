@@ -69,6 +69,9 @@ class SmsSettingsNotifier extends AsyncNotifier<SmsSettings> {
 
   Future<void> setDetectRefunds(bool v) async => save(
       (state.valueOrNull ?? const SmsSettings()).copyWith(detectRefunds: v));
+
+  Future<void> setShowParseDebug(bool v) async => save(
+      (state.valueOrNull ?? const SmsSettings()).copyWith(showParseDebug: v));
 }
 
 final smsSettingsProvider =

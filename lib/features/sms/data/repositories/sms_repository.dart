@@ -273,6 +273,7 @@ class SmsRepository {
       'sms_confidence_threshold': prefs.getInt('sms_confidence_threshold'),
       'sms_detect_subscriptions': prefs.getBool('sms_detect_subscriptions'),
       'sms_detect_refunds': prefs.getBool('sms_detect_refunds'),
+      'sms_show_parse_debug': prefs.getBool('sms_show_parse_debug'),
     });
   }
 

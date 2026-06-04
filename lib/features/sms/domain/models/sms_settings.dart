@@ -7,6 +7,7 @@ class SmsSettings {
     this.confidenceThreshold = 75,
     this.detectSubscriptions = true,
     this.detectRefunds = true,
+    this.showParseDebug = false,
   });
 
   final bool enabled;
@@ -18,12 +19,16 @@ class SmsSettings {
   final bool detectSubscriptions;
   final bool detectRefunds;
 
+  /// When true, inbox tiles show direction signals and merchant extraction source.
+  final bool showParseDebug;
+
   SmsSettings copyWith({
     bool? enabled,
     SmsAutoAddMode? autoAddMode,
     int? confidenceThreshold,
     bool? detectSubscriptions,
     bool? detectRefunds,
+    bool? showParseDebug,
   }) {
     return SmsSettings(
       enabled: enabled ?? this.enabled,
@@ -31,6 +36,7 @@ class SmsSettings {
       confidenceThreshold: confidenceThreshold ?? this.confidenceThreshold,
       detectSubscriptions: detectSubscriptions ?? this.detectSubscriptions,
       detectRefunds: detectRefunds ?? this.detectRefunds,
+      showParseDebug: showParseDebug ?? this.showParseDebug,
     );
   }
 
@@ -40,6 +46,7 @@ class SmsSettings {
   static const _kThreshold = 'sms_confidence_threshold';
   static const _kSubscriptions = 'sms_detect_subscriptions';
   static const _kRefunds = 'sms_detect_refunds';
+  static const _kShowParseDebug = 'sms_show_parse_debug';
 
   Map<String, dynamic> toPrefs() => {
         _kEnabled: enabled,
@@ -47,6 +54,7 @@ class SmsSettings {
         _kThreshold: confidenceThreshold,
         _kSubscriptions: detectSubscriptions,
         _kRefunds: detectRefunds,
+        _kShowParseDebug: showParseDebug,
       };
 
   factory SmsSettings.fromPrefs(Map<String, dynamic> prefs) => SmsSettings(
@@ -56,6 +64,7 @@ class SmsSettings {
         confidenceThreshold: prefs[_kThreshold] as int? ?? 75,
         detectSubscriptions: prefs[_kSubscriptions] as bool? ?? true,
         detectRefunds: prefs[_kRefunds] as bool? ?? true,
+        showParseDebug: prefs[_kShowParseDebug] as bool? ?? false,
       );
 }
 

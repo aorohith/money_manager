@@ -283,7 +283,51 @@ class _SmsSettingsScreenState extends ConsumerState<SmsSettingsScreen>
                                 contentPadding: EdgeInsets.zero,
                                 dense: true,
                               ),
+                              SwitchListTile(
+                                title: const Text(
+                                  'Show parse debug',
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                                subtitle: const Text(
+                                  'Direction signals and merchant source in inbox',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                                value: settings.showParseDebug,
+                                onChanged: (v) => ref
+                                    .read(smsSettingsProvider.notifier)
+                                    .setShowParseDebug(v),
+                                activeThumbColor: AppColors.brand,
+                                contentPadding: EdgeInsets.zero,
+                                dense: true,
+                              ),
                             ],
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        AppCard(
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.md),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Privacy',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelMedium
+                                      ?.copyWith(fontWeight: FontWeight.w700),
+                                ),
+                                const SizedBox(height: AppSpacing.xs),
+                                Text(
+                                  'Parsing runs on your device. We read banking '
+                                  'notifications (not personal chats). Full message '
+                                  'text is cleared when you approve or skip a '
+                                  'transaction.',
+                                  style:
+                                      Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],

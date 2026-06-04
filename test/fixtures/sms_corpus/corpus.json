@@ -1,0 +1,623 @@
+[
+  {
+    "id": "hdfc_debit_at",
+    "text": "A/C XX1234 debited Rs.500 at SWIGGY",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 500,
+    "merchantContains": "SWIGGY"
+  },
+  {
+    "id": "upi_swiggy",
+    "text": "INR 250.50 debited via UPI to Swiggy on 10-05. Avl Bal INR 1200.00 Ref No 1234567890",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 250.5,
+    "merchantContains": "SWIGGY",
+    "paymentMethod": "UPI",
+    "referenceNumber": "1234567890"
+  },
+  {
+    "id": "credit_imps",
+    "text": "Rs. 1,500 credited to your account XX1234 via IMPS. Ref No 9876543210",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 1500
+  },
+  {
+    "id": "received_from_vpa",
+    "text": "Rs 200 received from JOHN@ybl",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 200,
+    "merchantContains": "JOHN"
+  },
+  {
+    "id": "axis_spent_at",
+    "text": "INR 999 was spent on your Credit Card XX4321 on 04-Jun-26 at Paytm Mobile Solut. Avbl Lmt: Rs.5000",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 999,
+    "merchantContains": "PAYTM",
+    "paymentMethod": "Credit Card"
+  },
+  {
+    "id": "icici_info_vps",
+    "text": "Dear Customer, You have made a Debit Card purchase of INR 450.00 on 04 Mar. Info.VPS*BOOGIE BOOG. Your Net Available Balance is INR 12000",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 450,
+    "merchantContains": "BOOGIE"
+  },
+  {
+    "id": "axis_debited_by",
+    "text": "Hello! Your a/c no XX5678 has been debited by Rs 240 on 04-06-26. The a/c balance is Rs 5000. Info: PUR/D MART/Navi Mumbai",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 240,
+    "merchantContains": "MART"
+  },
+  {
+    "id": "beena_hotel_credited",
+    "text": "Your A/C XX5678 debited by Rs 240. Beena Hotel credited. Avl Bal Rs 12000",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 240,
+    "merchantContains": "BEENA"
+  },
+  {
+    "id": "dlt_upi_debit",
+    "text": "INR 500 debited from your A/c XX1234 via UPI on 04-06-26 to ZOMATO. UPI Ref: 12345678901234. Bal: INR 8000",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 500,
+    "merchantContains": "ZOMATO",
+    "paymentMethod": "UPI"
+  },
+  {
+    "id": "dlt_credit_by",
+    "text": "Dear Customer, INR 1000 credited to your A/c XX1234 on 04-06-26 by RAHUL SHARMA. Available bal: INR 15000",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 1000,
+    "merchantContains": "RAHUL"
+  },
+  {
+    "id": "wallet_paid_at",
+    "text": "You paid Rs 199.0 via FreeCharge at Book My Show (OrderID WEB-1-2)",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 199,
+    "merchantContains": "BOOK"
+  },
+  {
+    "id": "neft_beneficiary",
+    "text": "Your NEFT Txn. with Ref. No AXMB123 for Rs. 5000 has been credited to Beneficiary : Shashank Garad on March 4,26",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 5000,
+    "merchantContains": "SHASHANK"
+  },
+  {
+    "id": "hdfc_card_at",
+    "text": "Rs.1200.00 was spent on ur HDFCBank CREDIT Card ending 4321 on 04-06-26:14:30:00 at DECATHLON SPORTS,.Avl bal - Rs.8000",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 1200,
+    "merchantContains": "DECATHLON"
+  },
+  {
+    "id": "salary_credit",
+    "text": "Salary of Rs 50000 credited to AC XX9999 on 01-Apr-26",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 50000
+  },
+  {
+    "id": "ambiguous_dual",
+    "text": "Rs 500 debited and Rs 500 credited",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 500
+  },
+  {
+    "id": "reject_otp",
+    "text": "Your OTP is 123456. Do not share with anyone",
+    "expectParse": false
+  },
+  {
+    "id": "reject_failure",
+    "text": "Txn failed. INR 500 debit attempted via UPI",
+    "expectParse": false
+  },
+  {
+    "id": "reject_bill_due",
+    "text": "Your A/C XX1234 reflects Rs 500 due against bill dated 04-Mar-26 Please pay your dues",
+    "expectParse": false
+  },
+  {
+    "id": "reject_loan_marketing",
+    "text": "Get Insta Loan of Rs.50000 on HDFC Bank Credit Card ending 1234 Credited to Savings A/c ending 5678",
+    "expectParse": false
+  },
+  {
+    "id": "reject_internal_transfer",
+    "text": "Dear Customer, Your a/c no. XXXXXXXX1234 is debited for Rs.5000 on 04-Mar-26 and a/c XXXXXXXX5678 credited (IMPS Ref no 999)",
+    "expectParse": false
+  },
+  {
+    "id": "reject_no_signal",
+    "text": "INR 700 available in your wallet",
+    "expectParse": false
+  },
+  {
+    "id": "icici_debited_with",
+    "text": "Your Ac XX9012 is debited with INR 1500.00 NFS*CASH WDL*04-06-26. Avbl Bal INR 20000",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 1500
+  },
+  {
+    "id": "jio_money_from",
+    "text": "Your Jio Money account is credited with Rs. 500.0 from KAPIL. Your Jio Money account balance is Rs. 1500.0.",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 500,
+    "merchantContains": "KAPIL",
+    "paymentMethod": "Wallet"
+  },
+  {
+    "id": "paid_to_zomato",
+    "text": "You paid Rs 250 to ZOMATO",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 250,
+    "merchantContains": "ZOMATO"
+  },
+  {
+    "id": "card_ending_hint",
+    "text": "Thank you for using Debit Card ending 4321 for Rs.99.0 in MUMBAI at RELIANCE on 04-06-26 Avl bal: Rs.5000",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 99,
+    "merchantContains": "RELIANCE",
+    "accountHint": "XX4321"
+  },
+  {
+    "id": "sbi_ac_debited",
+    "text": "Dear Customer, A/c XX4567 debited INR 3500.00 on 04-06-26. Info: UPI/AMAZON PAY. Avl Bal INR 25000",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 3500,
+    "merchantContains": "AMAZON"
+  },
+  {
+    "id": "kotak_upi_to",
+    "text": "Rs.75.00 debited from Kotak Bank A/c XX1111 via UPI to merchant@paytm on 04-06-26. UPI Ref 99887766554433",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 75,
+    "paymentMethod": "UPI"
+  },
+  {
+    "id": "yes_credit_received",
+    "text": "INR 2500.00 credited to A/c **7788 on 04-Jun-26. Received from PRIYA SINGH",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 2500,
+    "merchantContains": "PRIYA"
+  },
+  {
+    "id": "phonepe_paid",
+    "text": "You have paid Rs 149 to NETFLIX via PhonePe. Ref 1122334455667788",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 149,
+    "merchantContains": "NETFLIX"
+  },
+  {
+    "id": "gpay_sent",
+    "text": "Rs. 89 sent to SWIGGY@okaxis (Google Pay). Not you? Report",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 89,
+    "merchantContains": "SWIGGY"
+  },
+  {
+    "id": "amazon_pay_debit",
+    "text": "INR 1299 debited from Amazon Pay balance for order at AMAZON.IN",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 1299,
+    "merchantContains": "AMAZON"
+  },
+  {
+    "id": "pnb_credited_with",
+    "text": "Your A/c XX3344 is credited with Rs 8000.00 on 04-06-26. NEFT Cr-REF123",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 8000
+  },
+  {
+    "id": "bob_debited_by",
+    "text": "BOB: A/c XX5566 debited by Rs. 650.00 on 04-06-26. UPI-IRCTC",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 650,
+    "merchantContains": "IRCTC"
+  },
+  {
+    "id": "canara_spent_card",
+    "text": "Rs 4500 spent on Canara Bank Credit Card XX8899 at FLIPKART on 04-JUN-26",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 4500,
+    "merchantContains": "FLIPKART",
+    "paymentMethod": "Credit Card"
+  },
+  {
+    "id": "union_imps_credit",
+    "text": "Rs 12000 credited to your account XX2233 via IMPS Ref 5566778899 from EMPLOYER",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 12000
+  },
+  {
+    "id": "idfc_at_mixed",
+    "text": "INR 299.00 debited from A/c XX6677 on 04-06-26 at Uber India",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 299,
+    "merchantContains": "UBER"
+  },
+  {
+    "id": "federal_info_bil",
+    "text": "Debit INR 199.00 on 04-06-26. Info.BIL*SPOTIFY. Avl INR 5000",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 199,
+    "merchantContains": "SPOTIFY"
+  },
+  {
+    "id": "indus_beneficiary_neft",
+    "text": "NEFT of Rs 15000 credited. Beneficiary : SELF TRANSFER on 04-03-26",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 15000
+  },
+  {
+    "id": "rbl_card_purchase",
+    "text": "Txn of Rs 2500.00 on RBL Bank Credit Card **9988 at MYNTRA DESIGNS",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 2500,
+    "merchantContains": "MYNTRA"
+  },
+  {
+    "id": "citi_ending_hint",
+    "text": "USD 0 not applicable. INR 1800 debited on Citibank Card ending 5544 at STARBUCKS",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 1800,
+    "merchantContains": "STARBUCKS"
+  },
+  {
+    "id": "hsbc_ac_debited",
+    "text": "A/c XX1212 debited with INR 75,000.00 on 04-Jun-26. CHQ/RTGS-RENT",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 75000
+  },
+  {
+    "id": "payzapp_wallet",
+    "text": "Rs 50 debited from PayZapp wallet to BIGBASKET",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 50,
+    "merchantContains": "BIGBASKET",
+    "paymentMethod": "Wallet"
+  },
+  {
+    "id": "cred_spent",
+    "text": "INR 999 spent on CRED Club card at URBAN COMPANY on 04-06-26",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 999,
+    "merchantContains": "URBAN"
+  },
+  {
+    "id": "ola_money_credit",
+    "text": "Rs.300 credited to Ola Money from RAMESH K",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 300,
+    "merchantContains": "RAMESH",
+    "paymentMethod": "Wallet"
+  },
+  {
+    "id": "mobikwik_debit",
+    "text": "Rs 1000 debited from MobiKwik wallet for BESCOM bill pay",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 1000
+  },
+  {
+    "id": "emi_netflix",
+    "text": "INR 649 debited for NETFLIX subscription renewal on card XX4321",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 649,
+    "merchantContains": "NETFLIX"
+  },
+  {
+    "id": "prime_emi",
+    "text": "Your Amazon Prime membership fee of Rs 1499 debited from XX1234",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 1499,
+    "merchantContains": "AMAZON"
+  },
+  {
+    "id": "atm_cash_wdl",
+    "text": "INR 10000 withdrawn from A/c XX9090 at ATM NFS*SBI*MUMBAI on 04-06-26",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 10000
+  },
+  {
+    "id": "upi_lite",
+    "text": "UPI Lite: Rs 200 debited to add money. Ref 12345678",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 200
+  },
+  {
+    "id": "credit_card_payment",
+    "text": "Payment of Rs 5000 received towards HDFC Credit Card XX4321",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 5000
+  },
+  {
+    "id": "refund_credit",
+    "text": "Refund of INR 399 credited to A/c XX1234 for AMAZON order",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 399,
+    "merchantContains": "AMAZON"
+  },
+  {
+    "id": "cashback_credit",
+    "text": "Rs 50 cashback credited to your wallet by PAYTM",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 50,
+    "merchantContains": "PAYTM"
+  },
+  {
+    "id": "dividend_credit",
+    "text": "INR 120 credited as dividend to DEMAT linked A/c",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 120
+  },
+  {
+    "id": "fd_interest",
+    "text": "Interest of Rs 450 credited to FD A/c XX8888",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 450
+  },
+  {
+    "id": "reject_declined",
+    "text": "Your card txn of INR 500 at MERCHANT was declined. Insufficient funds",
+    "expectParse": false
+  },
+  {
+    "id": "reject_reversed_failed",
+    "text": "UPI txn failed and reversed. INR 200 not debited",
+    "expectParse": false
+  },
+  {
+    "id": "reject_promo",
+    "text": "Congratulations! You won Rs 10000 cashback. Click to claim",
+    "expectParse": false
+  },
+  {
+    "id": "reject_kyc",
+    "text": "Complete your KYC to unlock Rs 500 reward. No txn",
+    "expectParse": false
+  },
+  {
+    "id": "reject_balance_enquiry",
+    "text": "Available balance in A/c XX1234 is INR 45000 as on 04-06-26",
+    "expectParse": false
+  },
+  {
+    "id": "reject_payment_reminder",
+    "text": "Reminder: Credit card bill of Rs 12000 due on 10-06-26. Pay now",
+    "expectParse": false
+  },
+  {
+    "id": "reject_otp_alt",
+    "text": "OTP 998877 for txn of Rs 500 at AMAZON is valid for 5 mins",
+    "expectParse": false
+  },
+  {
+    "id": "reject_insufficient_upi",
+    "text": "UPI payment of Rs 100 to shop@ybl failed due to insufficient balance",
+    "expectParse": false
+  },
+  {
+    "id": "hdfc_neft_credit",
+    "text": "NEFT Cr INR 25000 from CLIENT CO to A/c XX1234 on 04-06-26",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 25000
+  },
+  {
+    "id": "axis_rtgs_debit",
+    "text": "RTGS Dr INR 100000 from A/c XX5678 to VENDOR LTD on 04-06-26",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 100000
+  },
+  {
+    "id": "sbi_upi_collect",
+    "text": "Collect request: Rs 500 from merchant@ybl \u2014 not a debit yet",
+    "expectParse": false
+  },
+  {
+    "id": "icici_mmt",
+    "text": "INR 3500 debited from ICICI A/c XX9012. Info.IIN*MAKEMYTRIP",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 3500,
+    "merchantContains": "MAKEMYTRIP"
+  },
+  {
+    "id": "hdfc_mob_ccpmt",
+    "text": "Rs 899 debited. Info.MOB/CCPMT/UBER INDIA",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 899,
+    "merchantContains": "UBER"
+  },
+  {
+    "id": "axis_vps_zomato",
+    "text": "Card txn INR 450. Info.VPS*ZOMATO MEDIA",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 450,
+    "merchantContains": "ZOMATO"
+  },
+  {
+    "id": "wallet_ola_paid",
+    "text": "You paid Rs 85 at OLA CABS using OlaMoney",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 85,
+    "merchantContains": "OLA"
+  },
+  {
+    "id": "bharatpe_qr",
+    "text": "INR 120 debited via UPI to BharatPe merchant SHARMA STORES",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 120,
+    "merchantContains": "SHARMA"
+  },
+  {
+    "id": "cred_club_upi",
+    "text": "Rs 2500 debited via CRED UPI to rent@okicici",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 2500,
+    "paymentMethod": "UPI"
+  },
+  {
+    "id": "lazypay_emi",
+    "text": "EMI of Rs 3333 debited for LazyPay purchase at CROMA",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 3333,
+    "merchantContains": "CROMA"
+  },
+  {
+    "id": "simpl_bnpl",
+    "text": "Rs 799 charged to Simpl for ZEPTO order",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 799,
+    "merchantContains": "ZEPTO"
+  },
+  {
+    "id": "slice_card",
+    "text": "INR 1500 spent on slice card at AJIO",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 1500,
+    "merchantContains": "AJIO"
+  },
+  {
+    "id": "onecard_txn",
+    "text": "Rs 2200 debited on OneCard at IKEA",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 2200,
+    "merchantContains": "IKEA"
+  },
+  {
+    "id": "fampay_teen",
+    "text": "Rs 50 debited from FamPay to canteen@fampay",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 50
+  },
+  {
+    "id": "navi_upi",
+    "text": "INR 999 debited via UPI from Navi account to policy@navihq",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 999,
+    "paymentMethod": "UPI"
+  },
+  {
+    "id": "groww_credit",
+    "text": "Rs 10000 credited to Groww balance via UPI",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 10000
+  },
+  {
+    "id": "zerodha_payout",
+    "text": "INR 5000 payout credited to bank XX1234 from Zerodha",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 5000
+  },
+  {
+    "id": "upi_ref_only",
+    "text": "INR 100 debited. UPI Ref: 12345678901234. Bal INR 900",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 100,
+    "referenceNumber": "12345678901234"
+  },
+  {
+    "id": "date_dd_mmm_yy",
+    "text": "A/c XX1234 debited Rs 500 on 04-Jun-26 at DOMINOS",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 500,
+    "merchantContains": "DOMINOS"
+  },
+  {
+    "id": "date_dd_mm_yy_time",
+    "text": "Rs 300 debited on 04-06-26 14:30 at PETROL PUMP",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 300
+  },
+  {
+    "id": "p2p_handle",
+    "text": "Rs 500 received from priya.sharma@oksbi",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 500,
+    "merchantContains": "PRIYA"
+  },
+  {
+    "id": "p2p_name_only",
+    "text": "INR 1000 credited by IMPS from ANIL KUMAR",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 1000,
+    "merchantContains": "ANIL"
+  },
+  {
+    "id": "reject_subscription_offer",
+    "text": "Subscribe Netflix at Rs 199/mo. No charge yet",
+    "expectParse": false
+  }
+]

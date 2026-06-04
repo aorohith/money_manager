@@ -38,69 +38,95 @@ const SmsParsedTransactionSchema = CollectionSchema(
       name: r'confidence',
       type: IsarType.double,
     ),
-    r'detectedAt': PropertySchema(
+    r'counterpartyType': PropertySchema(
       id: 4,
+      name: r'counterpartyType',
+      type: IsarType.byte,
+      enumMap: _SmsParsedTransactioncounterpartyTypeEnumValueMap,
+    ),
+    r'detectedAt': PropertySchema(
+      id: 5,
       name: r'detectedAt',
       type: IsarType.dateTime,
     ),
+    r'directionConfidence': PropertySchema(
+      id: 6,
+      name: r'directionConfidence',
+      type: IsarType.double,
+    ),
+    r'directionSignals': PropertySchema(
+      id: 7,
+      name: r'directionSignals',
+      type: IsarType.string,
+    ),
     r'isIncome': PropertySchema(
-      id: 5,
+      id: 8,
       name: r'isIncome',
       type: IsarType.bool,
     ),
+    r'isRecurring': PropertySchema(
+      id: 9,
+      name: r'isRecurring',
+      type: IsarType.bool,
+    ),
     r'linkedTransactionId': PropertySchema(
-      id: 6,
+      id: 10,
       name: r'linkedTransactionId',
       type: IsarType.long,
     ),
+    r'merchantExtractionSource': PropertySchema(
+      id: 11,
+      name: r'merchantExtractionSource',
+      type: IsarType.string,
+    ),
     r'merchantNormalized': PropertySchema(
-      id: 7,
+      id: 12,
       name: r'merchantNormalized',
       type: IsarType.string,
     ),
     r'merchantRaw': PropertySchema(
-      id: 8,
+      id: 13,
       name: r'merchantRaw',
       type: IsarType.string,
     ),
     r'paymentMethod': PropertySchema(
-      id: 9,
+      id: 14,
       name: r'paymentMethod',
       type: IsarType.string,
     ),
     r'rawText': PropertySchema(
-      id: 10,
+      id: 15,
       name: r'rawText',
       type: IsarType.string,
     ),
     r'referenceNumber': PropertySchema(
-      id: 11,
+      id: 16,
       name: r'referenceNumber',
       type: IsarType.string,
     ),
     r'senderAddress': PropertySchema(
-      id: 12,
+      id: 17,
       name: r'senderAddress',
       type: IsarType.string,
     ),
     r'status': PropertySchema(
-      id: 13,
+      id: 18,
       name: r'status',
       type: IsarType.byte,
       enumMap: _SmsParsedTransactionstatusEnumValueMap,
     ),
     r'suggestedCategoryId': PropertySchema(
-      id: 14,
+      id: 19,
       name: r'suggestedCategoryId',
       type: IsarType.long,
     ),
     r'transactionDate': PropertySchema(
-      id: 15,
+      id: 20,
       name: r'transactionDate',
       type: IsarType.dateTime,
     ),
     r'updatedAt': PropertySchema(
-      id: 16,
+      id: 21,
       name: r'updatedAt',
       type: IsarType.dateTime,
     )
@@ -184,6 +210,18 @@ int _smsParsedTransactionEstimateSize(
       bytesCount += 3 + value.length * 3;
     }
   }
+  {
+    final value = object.directionSignals;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.merchantExtractionSource;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.merchantNormalized.length * 3;
   bytesCount += 3 + object.merchantRaw.length * 3;
   bytesCount += 3 + object.paymentMethod.length * 3;
@@ -208,19 +246,24 @@ void _smsParsedTransactionSerialize(
   writer.writeDouble(offsets[1], object.amount);
   writer.writeDouble(offsets[2], object.availableBalance);
   writer.writeDouble(offsets[3], object.confidence);
-  writer.writeDateTime(offsets[4], object.detectedAt);
-  writer.writeBool(offsets[5], object.isIncome);
-  writer.writeLong(offsets[6], object.linkedTransactionId);
-  writer.writeString(offsets[7], object.merchantNormalized);
-  writer.writeString(offsets[8], object.merchantRaw);
-  writer.writeString(offsets[9], object.paymentMethod);
-  writer.writeString(offsets[10], object.rawText);
-  writer.writeString(offsets[11], object.referenceNumber);
-  writer.writeString(offsets[12], object.senderAddress);
-  writer.writeByte(offsets[13], object.status.index);
-  writer.writeLong(offsets[14], object.suggestedCategoryId);
-  writer.writeDateTime(offsets[15], object.transactionDate);
-  writer.writeDateTime(offsets[16], object.updatedAt);
+  writer.writeByte(offsets[4], object.counterpartyType.index);
+  writer.writeDateTime(offsets[5], object.detectedAt);
+  writer.writeDouble(offsets[6], object.directionConfidence);
+  writer.writeString(offsets[7], object.directionSignals);
+  writer.writeBool(offsets[8], object.isIncome);
+  writer.writeBool(offsets[9], object.isRecurring);
+  writer.writeLong(offsets[10], object.linkedTransactionId);
+  writer.writeString(offsets[11], object.merchantExtractionSource);
+  writer.writeString(offsets[12], object.merchantNormalized);
+  writer.writeString(offsets[13], object.merchantRaw);
+  writer.writeString(offsets[14], object.paymentMethod);
+  writer.writeString(offsets[15], object.rawText);
+  writer.writeString(offsets[16], object.referenceNumber);
+  writer.writeString(offsets[17], object.senderAddress);
+  writer.writeByte(offsets[18], object.status.index);
+  writer.writeLong(offsets[19], object.suggestedCategoryId);
+  writer.writeDateTime(offsets[20], object.transactionDate);
+  writer.writeDateTime(offsets[21], object.updatedAt);
 }
 
 SmsParsedTransaction _smsParsedTransactionDeserialize(
@@ -234,23 +277,30 @@ SmsParsedTransaction _smsParsedTransactionDeserialize(
     amount: reader.readDouble(offsets[1]),
     availableBalance: reader.readDoubleOrNull(offsets[2]),
     confidence: reader.readDoubleOrNull(offsets[3]),
-    isIncome: reader.readBoolOrNull(offsets[5]) ?? false,
-    linkedTransactionId: reader.readLongOrNull(offsets[6]),
-    merchantNormalized: reader.readString(offsets[7]),
-    merchantRaw: reader.readString(offsets[8]),
-    paymentMethod: reader.readString(offsets[9]),
-    rawText: reader.readString(offsets[10]),
-    referenceNumber: reader.readStringOrNull(offsets[11]),
-    senderAddress: reader.readString(offsets[12]),
+    counterpartyType: _SmsParsedTransactioncounterpartyTypeValueEnumMap[
+            reader.readByteOrNull(offsets[4])] ??
+        SmsCounterpartyType.unknown,
+    directionConfidence: reader.readDoubleOrNull(offsets[6]),
+    directionSignals: reader.readStringOrNull(offsets[7]),
+    isIncome: reader.readBoolOrNull(offsets[8]) ?? false,
+    isRecurring: reader.readBoolOrNull(offsets[9]) ?? false,
+    linkedTransactionId: reader.readLongOrNull(offsets[10]),
+    merchantExtractionSource: reader.readStringOrNull(offsets[11]),
+    merchantNormalized: reader.readString(offsets[12]),
+    merchantRaw: reader.readString(offsets[13]),
+    paymentMethod: reader.readString(offsets[14]),
+    rawText: reader.readString(offsets[15]),
+    referenceNumber: reader.readStringOrNull(offsets[16]),
+    senderAddress: reader.readString(offsets[17]),
     status: _SmsParsedTransactionstatusValueEnumMap[
-            reader.readByteOrNull(offsets[13])] ??
+            reader.readByteOrNull(offsets[18])] ??
         SmsReviewStatus.pending,
-    suggestedCategoryId: reader.readLongOrNull(offsets[14]),
-    transactionDate: reader.readDateTime(offsets[15]),
+    suggestedCategoryId: reader.readLongOrNull(offsets[19]),
+    transactionDate: reader.readDateTime(offsets[20]),
   );
-  object.detectedAt = reader.readDateTime(offsets[4]);
+  object.detectedAt = reader.readDateTime(offsets[5]);
   object.id = id;
-  object.updatedAt = reader.readDateTime(offsets[16]);
+  object.updatedAt = reader.readDateTime(offsets[21]);
   return object;
 }
 
@@ -270,38 +320,60 @@ P _smsParsedTransactionDeserializeProp<P>(
     case 3:
       return (reader.readDoubleOrNull(offset)) as P;
     case 4:
-      return (reader.readDateTime(offset)) as P;
+      return (_SmsParsedTransactioncounterpartyTypeValueEnumMap[
+              reader.readByteOrNull(offset)] ??
+          SmsCounterpartyType.unknown) as P;
     case 5:
-      return (reader.readBoolOrNull(offset) ?? false) as P;
+      return (reader.readDateTime(offset)) as P;
     case 6:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 7:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 8:
-      return (reader.readString(offset)) as P;
+      return (reader.readBoolOrNull(offset) ?? false) as P;
     case 9:
-      return (reader.readString(offset)) as P;
+      return (reader.readBoolOrNull(offset) ?? false) as P;
     case 10:
-      return (reader.readString(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 11:
       return (reader.readStringOrNull(offset)) as P;
     case 12:
       return (reader.readString(offset)) as P;
     case 13:
+      return (reader.readString(offset)) as P;
+    case 14:
+      return (reader.readString(offset)) as P;
+    case 15:
+      return (reader.readString(offset)) as P;
+    case 16:
+      return (reader.readStringOrNull(offset)) as P;
+    case 17:
+      return (reader.readString(offset)) as P;
+    case 18:
       return (_SmsParsedTransactionstatusValueEnumMap[
               reader.readByteOrNull(offset)] ??
           SmsReviewStatus.pending) as P;
-    case 14:
+    case 19:
       return (reader.readLongOrNull(offset)) as P;
-    case 15:
+    case 20:
       return (reader.readDateTime(offset)) as P;
-    case 16:
+    case 21:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
 }
 
+const _SmsParsedTransactioncounterpartyTypeEnumValueMap = {
+  'merchant': 0,
+  'person': 1,
+  'unknown': 2,
+};
+const _SmsParsedTransactioncounterpartyTypeValueEnumMap = {
+  0: SmsCounterpartyType.merchant,
+  1: SmsCounterpartyType.person,
+  2: SmsCounterpartyType.unknown,
+};
 const _SmsParsedTransactionstatusEnumValueMap = {
   'pending': 0,
   'approved': 1,
@@ -1106,6 +1178,63 @@ extension SmsParsedTransactionQueryFilter on QueryBuilder<SmsParsedTransaction,
   }
 
   QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+          QAfterFilterCondition>
+      counterpartyTypeEqualTo(SmsCounterpartyType value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'counterpartyType',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> counterpartyTypeGreaterThan(
+    SmsCounterpartyType value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'counterpartyType',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> counterpartyTypeLessThan(
+    SmsCounterpartyType value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'counterpartyType',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> counterpartyTypeBetween(
+    SmsCounterpartyType lower,
+    SmsCounterpartyType upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'counterpartyType',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
       QAfterFilterCondition> detectedAtEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -1157,6 +1286,246 @@ extension SmsParsedTransactionQueryFilter on QueryBuilder<SmsParsedTransaction,
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> directionConfidenceIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'directionConfidence',
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> directionConfidenceIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'directionConfidence',
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> directionConfidenceEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'directionConfidence',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> directionConfidenceGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'directionConfidence',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> directionConfidenceLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'directionConfidence',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> directionConfidenceBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'directionConfidence',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> directionSignalsIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'directionSignals',
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> directionSignalsIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'directionSignals',
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> directionSignalsEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'directionSignals',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> directionSignalsGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'directionSignals',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> directionSignalsLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'directionSignals',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> directionSignalsBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'directionSignals',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> directionSignalsStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'directionSignals',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> directionSignalsEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'directionSignals',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+          QAfterFilterCondition>
+      directionSignalsContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'directionSignals',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+          QAfterFilterCondition>
+      directionSignalsMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'directionSignals',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> directionSignalsIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'directionSignals',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> directionSignalsIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'directionSignals',
+        value: '',
       ));
     });
   }
@@ -1222,6 +1591,16 @@ extension SmsParsedTransactionQueryFilter on QueryBuilder<SmsParsedTransaction,
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'isIncome',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> isRecurringEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isRecurring',
         value: value,
       ));
     });
@@ -1297,6 +1676,164 @@ extension SmsParsedTransactionQueryFilter on QueryBuilder<SmsParsedTransaction,
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> merchantExtractionSourceIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'merchantExtractionSource',
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> merchantExtractionSourceIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'merchantExtractionSource',
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> merchantExtractionSourceEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'merchantExtractionSource',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> merchantExtractionSourceGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'merchantExtractionSource',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> merchantExtractionSourceLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'merchantExtractionSource',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> merchantExtractionSourceBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'merchantExtractionSource',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> merchantExtractionSourceStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'merchantExtractionSource',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> merchantExtractionSourceEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'merchantExtractionSource',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+          QAfterFilterCondition>
+      merchantExtractionSourceContains(String value,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'merchantExtractionSource',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+          QAfterFilterCondition>
+      merchantExtractionSourceMatches(String pattern,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'merchantExtractionSource',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> merchantExtractionSourceIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'merchantExtractionSource',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction,
+      QAfterFilterCondition> merchantExtractionSourceIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'merchantExtractionSource',
+        value: '',
       ));
     });
   }
@@ -2455,6 +2992,20 @@ extension SmsParsedTransactionQuerySortBy
   }
 
   QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      sortByCounterpartyType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'counterpartyType', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      sortByCounterpartyTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'counterpartyType', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
       sortByDetectedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'detectedAt', Sort.asc);
@@ -2465,6 +3016,34 @@ extension SmsParsedTransactionQuerySortBy
       sortByDetectedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'detectedAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      sortByDirectionConfidence() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'directionConfidence', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      sortByDirectionConfidenceDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'directionConfidence', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      sortByDirectionSignals() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'directionSignals', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      sortByDirectionSignalsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'directionSignals', Sort.desc);
     });
   }
 
@@ -2483,6 +3062,20 @@ extension SmsParsedTransactionQuerySortBy
   }
 
   QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      sortByIsRecurring() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isRecurring', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      sortByIsRecurringDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isRecurring', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
       sortByLinkedTransactionId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'linkedTransactionId', Sort.asc);
@@ -2493,6 +3086,20 @@ extension SmsParsedTransactionQuerySortBy
       sortByLinkedTransactionIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'linkedTransactionId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      sortByMerchantExtractionSource() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'merchantExtractionSource', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      sortByMerchantExtractionSourceDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'merchantExtractionSource', Sort.desc);
     });
   }
 
@@ -2696,6 +3303,20 @@ extension SmsParsedTransactionQuerySortThenBy
   }
 
   QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      thenByCounterpartyType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'counterpartyType', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      thenByCounterpartyTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'counterpartyType', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
       thenByDetectedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'detectedAt', Sort.asc);
@@ -2706,6 +3327,34 @@ extension SmsParsedTransactionQuerySortThenBy
       thenByDetectedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'detectedAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      thenByDirectionConfidence() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'directionConfidence', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      thenByDirectionConfidenceDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'directionConfidence', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      thenByDirectionSignals() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'directionSignals', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      thenByDirectionSignalsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'directionSignals', Sort.desc);
     });
   }
 
@@ -2738,6 +3387,20 @@ extension SmsParsedTransactionQuerySortThenBy
   }
 
   QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      thenByIsRecurring() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isRecurring', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      thenByIsRecurringDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isRecurring', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
       thenByLinkedTransactionId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'linkedTransactionId', Sort.asc);
@@ -2748,6 +3411,20 @@ extension SmsParsedTransactionQuerySortThenBy
       thenByLinkedTransactionIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'linkedTransactionId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      thenByMerchantExtractionSource() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'merchantExtractionSource', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QAfterSortBy>
+      thenByMerchantExtractionSourceDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'merchantExtractionSource', Sort.desc);
     });
   }
 
@@ -2923,9 +3600,31 @@ extension SmsParsedTransactionQueryWhereDistinct
   }
 
   QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QDistinct>
+      distinctByCounterpartyType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'counterpartyType');
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QDistinct>
       distinctByDetectedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'detectedAt');
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QDistinct>
+      distinctByDirectionConfidence() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'directionConfidence');
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QDistinct>
+      distinctByDirectionSignals({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'directionSignals',
+          caseSensitive: caseSensitive);
     });
   }
 
@@ -2937,9 +3636,24 @@ extension SmsParsedTransactionQueryWhereDistinct
   }
 
   QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QDistinct>
+      distinctByIsRecurring() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isRecurring');
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QDistinct>
       distinctByLinkedTransactionId() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'linkedTransactionId');
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, SmsParsedTransaction, QDistinct>
+      distinctByMerchantExtractionSource({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'merchantExtractionSource',
+          caseSensitive: caseSensitive);
     });
   }
 
@@ -3054,10 +3768,31 @@ extension SmsParsedTransactionQueryProperty on QueryBuilder<
     });
   }
 
+  QueryBuilder<SmsParsedTransaction, SmsCounterpartyType, QQueryOperations>
+      counterpartyTypeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'counterpartyType');
+    });
+  }
+
   QueryBuilder<SmsParsedTransaction, DateTime, QQueryOperations>
       detectedAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'detectedAt');
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, double?, QQueryOperations>
+      directionConfidenceProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'directionConfidence');
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, String?, QQueryOperations>
+      directionSignalsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'directionSignals');
     });
   }
 
@@ -3068,10 +3803,24 @@ extension SmsParsedTransactionQueryProperty on QueryBuilder<
     });
   }
 
+  QueryBuilder<SmsParsedTransaction, bool, QQueryOperations>
+      isRecurringProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isRecurring');
+    });
+  }
+
   QueryBuilder<SmsParsedTransaction, int?, QQueryOperations>
       linkedTransactionIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'linkedTransactionId');
+    });
+  }
+
+  QueryBuilder<SmsParsedTransaction, String?, QQueryOperations>
+      merchantExtractionSourceProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'merchantExtractionSource');
     });
   }
 

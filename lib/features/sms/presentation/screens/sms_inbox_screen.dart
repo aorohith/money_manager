@@ -10,6 +10,7 @@ import '../../../transactions/domain/providers/transaction_providers.dart';
 import '../../data/models/sms_parsed_transaction.dart';
 import '../../domain/providers/sms_providers.dart';
 import '../widgets/new_merchant_sheet.dart';
+import '../widgets/sms_message_reference.dart';
 
 class SmsInboxScreen extends ConsumerWidget {
   const SmsInboxScreen({super.key});
@@ -18,6 +19,10 @@ class SmsInboxScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pendingAsync = ref.watch(smsPendingProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
+    final settingsAsync = ref.watch(smsSettingsProvider);
+    final threshold =
+        (settingsAsync.valueOrNull?.confidenceThreshold ?? 75) / 100.0;
+    final showParseDebug = settingsAsync.valueOrNull?.showParseDebug ?? false;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -29,9 +34,34 @@ class SmsInboxScreen extends ConsumerWidget {
             snap: true,
             actions: [
               pendingAsync.maybeWhen(
-                data: (list) => list.isEmpty
-                    ? const SizedBox.shrink()
-                    : TextButton(
+                data: (list) {
+                  if (list.isEmpty) return const SizedBox.shrink();
+                  final highConfidence = list.where((item) {
+                    final catConf = item.confidence ?? 0.0;
+                    final dirConf = item.directionConfidence ?? 0.0;
+                    return catConf >= threshold &&
+                        dirConf >= threshold &&
+                        item.suggestedCategoryId != null;
+                  }).toList();
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (highConfidence.isNotEmpty)
+                        TextButton(
+                          onPressed: () => _approveHighConfidence(
+                            context,
+                            ref,
+                            highConfidence,
+                          ),
+                          child: Text(
+                            'Approve ${highConfidence.length}',
+                            style: TextStyle(
+                              color: AppColors.brand,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      TextButton(
                         onPressed: () => _skipAll(context, ref, list),
                         child: Text(
                           'Skip all',
@@ -42,6 +72,9 @@ class SmsInboxScreen extends ConsumerWidget {
                           ),
                         ),
                       ),
+                    ],
+                  );
+                },
                 orElse: () => const SizedBox.shrink(),
               ),
               const SizedBox(width: AppSpacing.xs),
@@ -80,6 +113,8 @@ class SmsInboxScreen extends ConsumerWidget {
                         child: _SmsTransactionTile(
                           item: item,
                           categories: categoriesAsync.valueOrNull ?? [],
+                          confidenceThreshold: threshold,
+                          showParseDebug: showParseDebug,
                           onApprove: (categoryId) =>
                               _approve(context, ref, item, categoryId),
                           onSkip: () => _skip(ref, item),
@@ -150,7 +185,7 @@ class SmsInboxScreen extends ConsumerWidget {
     if (context.mounted) {
       showAppSnackBar(
         context,
-        message: 'Expense moved back to review',
+        message: 'Transaction moved back to review',
         type: AppSnackBarType.info,
       );
     }
@@ -161,6 +196,43 @@ class SmsInboxScreen extends ConsumerWidget {
     await ref
         .read(smsRepositoryProvider)
         .updateStatus(item.id, SmsReviewStatus.skipped);
+  }
+
+  Future<void> _approveHighConfidence(
+    BuildContext context,
+    WidgetRef ref,
+    List<SmsParsedTransaction> items,
+  ) async {
+    HapticFeedback.mediumImpact();
+    final accounts = await ref.read(accountsProvider.future);
+    final account = accounts.where((a) => a.isDefault).firstOrNull ??
+        accounts.firstOrNull;
+    if (account == null) return;
+
+    var saved = 0;
+    for (final item in items) {
+      final categoryId = item.suggestedCategoryId;
+      if (categoryId == null) continue;
+      await ref.read(smsRepositoryProvider).approveTransaction(
+            smsId: item.id,
+            tx: TransactionModel(
+              amount: item.amount,
+              categoryId: categoryId,
+              accountId: account.id,
+              date: item.transactionDate,
+              isIncome: item.isIncome,
+              note: item.merchantRaw,
+            ),
+          );
+      saved++;
+    }
+    if (context.mounted && saved > 0) {
+      showAppSnackBar(
+        context,
+        message: '$saved transaction${saved == 1 ? '' : 's'} saved',
+        type: AppSnackBarType.success,
+      );
+    }
   }
 
   Future<void> _skipAll(
@@ -193,6 +265,8 @@ class _SmsTransactionTile extends StatefulWidget {
   const _SmsTransactionTile({
     required this.item,
     required this.categories,
+    required this.confidenceThreshold,
+    required this.showParseDebug,
     required this.onApprove,
     required this.onSkip,
     required this.onTap,
@@ -200,6 +274,8 @@ class _SmsTransactionTile extends StatefulWidget {
 
   final SmsParsedTransaction item;
   final List<CategoryModel> categories;
+  final double confidenceThreshold;
+  final bool showParseDebug;
   final ValueChanged<int> onApprove;
   final VoidCallback onSkip;
   final VoidCallback onTap;
@@ -226,8 +302,12 @@ class _SmsTransactionTileState extends State<_SmsTransactionTile> {
     setState(() => _animatingClassify = true);
     await Future<void>.delayed(const Duration(milliseconds: 120));
     if (!mounted) return;
+    final categoryConfidence = widget.item.confidence ?? 0.0;
+    final directionConfidence = widget.item.directionConfidence ?? 0.0;
+    final canQuickSave =
+        categoryConfidence >= 0.75 && directionConfidence >= 0.75;
     final suggestedCategoryId = widget.item.suggestedCategoryId;
-    if (suggestedCategoryId != null) {
+    if (suggestedCategoryId != null && canQuickSave) {
       widget.onApprove(suggestedCategoryId);
     } else {
       widget.onTap();
@@ -242,7 +322,10 @@ class _SmsTransactionTileState extends State<_SmsTransactionTile> {
         .where((c) => c.id == widget.item.suggestedCategoryId)
         .firstOrNull;
     final confidence = widget.item.confidence ?? 0.0;
-    final isHighConfidence = confidence >= 0.75;
+    final directionConfidence = widget.item.directionConfidence ?? 0.0;
+    final isHighConfidence = confidence >= widget.confidenceThreshold;
+    final canQuickSave =
+        isHighConfidence && directionConfidence >= widget.confidenceThreshold;
     final isAnimating = _animatingSkip || _animatingClassify;
 
     return AnimatedScale(
@@ -332,33 +415,58 @@ class _SmsTransactionTileState extends State<_SmsTransactionTile> {
                                   : AppColors.expense,
                             ),
                       ),
-                      if (cat != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: cat.color.withAlpha(20),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            cat.name,
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  color: cat.color,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 10,
+                            if (cat != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
                                 ),
-                          ),
-                        ),
+                                decoration: BoxDecoration(
+                                  color: cat.color.withAlpha(20),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  cat.name,
+                                  style: Theme.of(context).textTheme.labelSmall
+                                      ?.copyWith(
+                                        color: cat.color,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 10,
+                                      ),
+                                ),
+                              )
+                            else
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: (widget.item.isIncome
+                                          ? AppColors.income
+                                          : AppColors.expense)
+                                      .withAlpha(20),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  widget.item.isIncome ? 'Income' : 'Expense',
+                                  style: Theme.of(context).textTheme.labelSmall
+                                      ?.copyWith(
+                                        color: widget.item.isIncome
+                                            ? AppColors.income
+                                            : AppColors.expense,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 10,
+                                      ),
+                                ),
+                              ),
                     ],
                   ),
                 ],
               ),
 
               // Confidence indicator (only show when low)
-              if (!isHighConfidence) ...[
+              if (!canQuickSave) ...[
                 const SizedBox(height: AppSpacing.xs),
                 Row(
                   children: [
@@ -370,16 +478,62 @@ class _SmsTransactionTileState extends State<_SmsTransactionTile> {
                           : AppColors.textSecondary,
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      'Suggested — tap to change category',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondary,
-                        fontSize: 10,
+                    Expanded(
+                      child: Text(
+                        directionConfidence < widget.confidenceThreshold
+                            ? 'Confirm expense or income before saving'
+                            : 'Suggested — tap to change category',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondary,
+                          fontSize: 10,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
+                ),
+              ],
+
+              if (widget.item.isRecurring) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Likely subscription / recurring',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppColors.brand,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
+
+              if (widget.showParseDebug &&
+                  (widget.item.directionSignals?.isNotEmpty ?? false)) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Signals: ${widget.item.directionSignals}'
+                  '${widget.item.merchantExtractionSource != null ? ' · ${widget.item.merchantExtractionSource}' : ''}',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontSize: 9,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondary,
+                      ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+
+              if (widget.item.rawText.trim().isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.sm),
+                SmsMessageReference(
+                  key: Key('sms_ref_${widget.item.id}'),
+                  rawText: widget.item.rawText,
+                  senderAddress: widget.item.senderAddress,
+                  expandable: true,
+                  initiallyExpanded: false,
                 ),
               ],
 
@@ -468,7 +622,7 @@ class _SmsTransactionTileState extends State<_SmsTransactionTile> {
                                 )
                               : Text(
                                   key: const ValueKey('classify-label'),
-                                  isHighConfidence
+                                  canQuickSave
                                       ? '✓ Save as ${cat?.name ?? (widget.item.isIncome ? "Income" : "Expense")}'
                                       : 'Classify',
                                   style: const TextStyle(

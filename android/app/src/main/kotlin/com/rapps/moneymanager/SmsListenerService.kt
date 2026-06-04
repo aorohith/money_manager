@@ -68,7 +68,8 @@ class SmsListenerService : NotificationListenerService() {
         private val transactionKeywords = listOf(
             "debited", "credited", "spent", "paid", "withdrawn",
             "transaction", "UPI", "payment", "purchase", "debit",
-            "₹", "rs.", "inr", "sent", "received",
+            "₹", "rs.", "inr", "sent", "received", "dr", "cr",
+            "a/c debited", "a/c credited",
         )
 
         fun isNotificationListenerEnabled(context: android.content.Context): Boolean {

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/sms/categorization_engine.dart';
 import '../../../../core/constants/constants.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../../transactions/data/models/category_model.dart';
@@ -9,6 +12,7 @@ import '../../../transactions/data/models/transaction_model.dart';
 import '../../../transactions/domain/providers/transaction_providers.dart';
 import '../../data/models/sms_parsed_transaction.dart';
 import '../../domain/providers/sms_providers.dart';
+import 'sms_message_reference.dart';
 
 /// Bottom sheet shown when a new / unknown merchant is detected.
 /// Lets the user pick a category and optionally create a persistent rule.
@@ -34,14 +38,41 @@ class _NewMerchantSheet extends ConsumerStatefulWidget {
 class _NewMerchantSheetState extends ConsumerState<_NewMerchantSheet> {
   late bool _isIncome;
   int? _selectedCategoryId;
+  int? _suggestedCategoryId;
   bool _alwaysApply = false;
   bool _saving = false;
+
+  static const _categorizer = CategorizationEngine();
+
+  bool get _needsDirectionConfirmation =>
+      (widget.pending.directionConfidence ?? 0) < 0.75;
 
   @override
   void initState() {
     super.initState();
     _isIncome = widget.pending.isIncome;
     _selectedCategoryId = widget.pending.suggestedCategoryId;
+    _suggestedCategoryId = widget.pending.suggestedCategoryId;
+  }
+
+  Future<void> _refreshSuggestionForDirection(bool isIncome) async {
+    final categories = await ref.read(categoriesProvider.future);
+    final userRule =
+        await ref.read(smsRepositoryProvider).findRule(widget.pending.merchantNormalized);
+    final result = _categorizer.categorize(
+      widget.pending.merchantNormalized,
+      categories,
+      userRule: userRule,
+      isIncome: isIncome,
+    );
+    if (!mounted) return;
+    setState(() {
+      _suggestedCategoryId = result.categoryId;
+      if (_selectedCategoryId == null ||
+          _selectedCategoryId == widget.pending.suggestedCategoryId) {
+        _selectedCategoryId = result.categoryId;
+      }
+    });
   }
 
   @override
@@ -110,7 +141,49 @@ class _NewMerchantSheetState extends ConsumerState<_NewMerchantSheet> {
             ),
           ),
 
+          if (widget.pending.rawText.trim().isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            SmsMessageReference(
+              rawText: widget.pending.rawText,
+              senderAddress: widget.pending.senderAddress,
+            ),
+          ],
+
           const SizedBox(height: AppSpacing.md),
+
+          if (_needsDirectionConfirmation) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withAlpha(20),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                border: Border.all(color: AppColors.warning.withAlpha(80)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    size: 16,
+                    color: AppColors.warning,
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: Text(
+                      'Could not confirm direction from message — please choose Expense or Income',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: isDark
+                                ? AppColors.textPrimaryDark
+                                : AppColors.textPrimary,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
 
           // Income / Expense toggle
           Semantics(
@@ -131,10 +204,14 @@ class _NewMerchantSheetState extends ConsumerState<_NewMerchantSheet> {
                   ),
                 ],
                 selected: {_isIncome},
-                onSelectionChanged: (s) => setState(() {
-                  _isIncome = s.first;
-                  _selectedCategoryId = null;
-                }),
+                onSelectionChanged: (s) {
+                  final next = s.first;
+                  setState(() {
+                    _isIncome = next;
+                    _selectedCategoryId = null;
+                  });
+                  unawaited(_refreshSuggestionForDirection(next));
+                },
               ),
             ),
           ),
@@ -158,7 +235,7 @@ class _NewMerchantSheetState extends ConsumerState<_NewMerchantSheet> {
               selectedId: _selectedCategoryId,
               onSelected: (id) => setState(() => _selectedCategoryId = id),
               suggestedId: _isIncome == widget.pending.isIncome
-                  ? widget.pending.suggestedCategoryId
+                  ? _suggestedCategoryId
                   : null,
             ),
             loading: () =>

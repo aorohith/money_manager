@@ -160,6 +160,7 @@ class MainActivity : FlutterActivity() {
             "debited", "credited", "spent", "paid", "withdrawn",
             "transaction", "upi", "payment", "purchase", "debit",
             "rs.", "inr", "sent", "received", "a/c", "account",
+            "dr", "cr", "a/c debited", "a/c credited",
         ).any { text.contains(it) } || text.contains("₹")
 
         val blocked = listOf(

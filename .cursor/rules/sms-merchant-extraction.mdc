@@ -1,0 +1,40 @@
+---
+description: Indian bank SMS merchant extraction patterns and pitfalls
+globs: lib/core/sms/**/*.dart, test/**/sms/**/*.dart
+---
+
+# SMS Merchant Extraction
+
+## Mistake
+
+"Beena Hotel credited" in the SMS body showed as Unknown Merchant because extraction only handled `to X` / `at MERCHANT` (ALL CAPS) / UPI `to`.
+
+## Root cause
+
+Indian DLT templates put the counterparty in `by NAME`, `Info.VPS*MERCHANT`, `Beneficiary :`, or `NAME credited` — not only `to/at`.
+
+## Recipe
+
+- Use tiered extraction in `lib/core/sms/extraction/merchant_extractor.dart` (priority order in file).
+- Reject `to your/account/beneficiary` in UPI/to patterns via negative lookahead.
+- Do not run `nameBeforeCredited` before `beneficiary` — it captures `has been` noise.
+- Strip card phrases for direction **after** detecting `using Debit Card` on raw text (`direction_scorer.dart`).
+- Corpus: `test/fixtures/sms_corpus/corpus.json` + `transaction_parser_corpus_test.dart`.
+
+## Amount regex pitfall
+
+**Mistake:** `INR 1000` parsed as `100` — corpus rows `dlt_credit_by`, `salary_credit` failed.
+
+**Root cause:** Amount group used `\d{1,3}` which stops after three digits.
+
+**Recipe:** use `\d+(?:,\d{2,3})*(?:\.\d{1,2})?` in `SmsAmountExtractor` for all amount patterns.
+
+## `to` inside merchant names (ZOMATO)
+
+**Mistake:** `ZOMATO MEDIA` extracted as merchant `MEDIA` via `\bto\s+` matching the `TO ` suffix of ZOMATO.
+
+**Recipe:** use `(?<![A-Za-z])to\s+` on `upiToRe` and `toMerchantRe`; use `(?<![A-Za-z])at\s+` on `atMerchantRe`.
+
+## Test pattern
+
+Add a fixture row for every new template family before shipping regex changes.
