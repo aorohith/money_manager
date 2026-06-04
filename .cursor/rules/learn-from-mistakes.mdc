@@ -14,6 +14,10 @@ rulebook that never absorbs lessons keeps shipping the same bugs.
 Treat every fix as **two** deliverables: the code change AND the
 corresponding rulebook delta.
 
+Feature work has the same obligation: see `keep-context-in-sync.mdc`
+(docs + rules + mandatory **"What I learned / unlearned"** in every
+task summary, even when the answer is "none").
+
 ---
 
 ## PART A — Learn: capture every mistake as a rule
@@ -23,6 +27,8 @@ corresponding rulebook delta.
 After ANY of the following, you MUST update the rulebook before
 declaring the task done:
 
+- You add a feature or change behaviour in an existing feature (new
+  invariant, API, or "how to extend" steps agents will need again).
 - The user reports a bug, crash, overflow, regression, or incorrect
   behaviour in code you touched.
 - A test fails for a reason you didn't anticipate (off-by-one, wrong
@@ -161,8 +167,12 @@ When you remove or rewrite a rule, the task summary MUST include:
 
 ## Reporting
 
-When you finish a task that triggered either direction, your summary
-MUST include a section titled **"What I learned / unlearned"** that:
+When you finish **any** substantive task (see `keep-context-in-sync.mdc`),
+your summary MUST include a section titled **"What I learned / unlearned"**
+that:
 
-- Names every file you added, edited, or deleted in `.cursor/rules/`.
+- Names every file you added, edited, or deleted in `.cursor/rules/`
+  and `dev/docs/` (or states explicitly that none were needed).
 - One-line summarises each lesson learned and each belief unlearned.
+- If nothing applied, write *None — no new lessons or stale rules found*
+  so the next agent knows context was checked, not skipped.

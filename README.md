@@ -16,6 +16,8 @@ Developer docs, scripts, and testing standards: **[dev/README.md](dev/README.md)
 
 Full module reference: **[dev/docs/README.md](dev/docs/README.md)**
 
+AI agents (Cursor, etc.): keep code, **[dev/docs/](dev/docs/)**, and **[.cursor/rules/](.cursor/rules/)** in sync every task — see **[AGENTS.md](AGENTS.md)**.
+
 ## Tech stack
 
 - Flutter 3+ / Dart 3

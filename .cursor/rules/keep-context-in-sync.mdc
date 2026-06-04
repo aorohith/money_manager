@@ -1,0 +1,65 @@
+---
+description: Keep dev docs and Cursor rules aligned with code on every feature add or change; report learn/unlearn in every task summary
+alwaysApply: true
+---
+
+# Keep Context In Sync (Docs + Rules + Summary)
+
+**Goal:** Every chat leaves the repo more precise for the next agent — code, `dev/docs/`, and `.cursor/rules/` must agree.
+
+This rule applies to **every** substantive task (new feature, behaviour change, refactor that changes contracts, bug fix). Question-only or read-only reviews skip doc/rule edits unless you find stale docs.
+
+## Definition of done (add to code + tests)
+
+Before marking work complete:
+
+1. **Docs** — Update `dev/docs/` when behaviour, entry points, routes, data model, or extension steps changed. See [dev/docs/README.md](../../dev/docs/README.md) § *Keeping context in sync*.
+2. **Cursor rules** — If the change introduces a repeatable pattern, constraint, or mistake to avoid: extend an existing `.cursor/rules/*.mdc` or add a focused rule (`globs` when file-scoped). Do **not** duplicate what `learn-from-mistakes.mdc` already covers — link to it.
+3. **Learn / unlearn** — Every task summary MUST include **"What I learned / unlearned"** per `learn-from-mistakes.mdc` (list rule/doc files touched, or state *None — no new lessons or stale rules found*).
+4. **Tests** — Per `mandatory-testing-for-features.mdc`.
+
+## When to update docs
+
+| Change | Update at minimum |
+|--------|-------------------|
+| New/changed feature module | Matching `dev/docs/features/<feature>.md` (Purpose, Entry points, Key types, Data flow, Tests) |
+| New/changed `lib/core/*` | Matching `dev/docs/core/*.md` |
+| New Isar collection / field | `architecture/data-model.md` + `main.dart` schema list in that doc |
+| New/changed route | Feature doc route table + `architecture/navigation-and-auth.md` |
+| New platform/Kotlin channel | `dev/docs/platform/*.md` |
+| New test layout or corpus | `dev/docs/testing/*.md` |
+
+If no doc exists for the area, add one using the 9-section template in `dev/docs/README.md`.
+
+## When to update Cursor rules
+
+- **Learn:** bug, surprise test failure, non-obvious invariant, or pattern you had to rediscover → rule delta (portable rule + stack recipe if needed).
+- **Unlearn:** code or framework change made a rule wrong → narrow, rewrite, or delete in the **same** task; note in summary.
+- **Skip:** one-off typo, pure copy change, or fact already documented in an accurate module doc.
+
+Prefer **extend** over new files. One concern per rule; use `globs:` for file-specific guidance.
+
+## Task summary template (required)
+
+End every implementation/fix response with:
+
+```markdown
+## What I learned / unlearned
+- **Docs:** <paths updated, or "unchanged — behaviour matches existing docs">
+- **Rules:** <paths updated/deleted, or "none">
+- **Learned:** <one line per lesson, or "none">
+- **Unlearned:** <one line per stale belief, or "none">
+```
+
+## Anti-patterns
+
+- Shipping feature code with stale `dev/docs/` — the next agent will trust wrong entry points.
+- Putting architecture only in chat — not visible to the next session.
+- Adding a third rule that repeats `flutter-overflow-safety.mdc` — merge instead.
+- Omitting the summary section because the task felt small.
+
+## Related rules
+
+- `learn-from-mistakes.mdc` — learn/unlearn mechanics and rule quality bar
+- `mandatory-testing-for-features.mdc` — tests and verification
+- `dev/docs/README.md` — doc index and sync checklist

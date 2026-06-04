@@ -5,6 +5,8 @@ Non-app code and documentation — kept out of the repo root for a cleaner layou
 | Path | Contents |
 |------|----------|
 | [docs/README.md](docs/README.md) | Module documentation index |
+| [../AGENTS.md](../AGENTS.md) | AI onboarding — docs + rules sync every chat |
+| [../.cursor/rules/](../.cursor/rules/) | Cursor rules (learn/unlearn, testing, layout) |
 | [tool/](tool/) | CLI scripts (SMS corpus debug, import sample cleaner) |
 | [TESTING.md](TESTING.md) | Testing standards and pre-merge gate |
 

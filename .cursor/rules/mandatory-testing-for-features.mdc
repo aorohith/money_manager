@@ -49,3 +49,7 @@ Work is not done until:
 - [ ] Tests for at least one realistic edge case exist and pass.
 - [ ] Tests for affected dependent areas exist and pass.
 - [ ] Static analysis / lints are clean for the touched files.
+- [ ] `dev/docs/` updated when behaviour, routes, or data model changed
+  (`keep-context-in-sync.mdc`).
+- [ ] Task summary includes **"What I learned / unlearned"** (rules/docs
+  or explicit *none*).

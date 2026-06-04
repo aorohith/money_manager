@@ -91,11 +91,30 @@ Start with **Architecture** if you are new to the codebase.
 | [testing/running-tests.md](testing/running-tests.md) | Commands by module |
 | [testing/sms-corpus.md](testing/sms-corpus.md) | SMS regression corpus |
 
-## Keeping docs updated
+## Keeping context in sync
 
-When you add or change a feature:
+**Every chat that changes code** should leave docs and Cursor rules accurate
+for the next agent. This is enforced by `.cursor/rules/keep-context-in-sync.mdc`
+(always on) and reported in the **"What I learned / unlearned"** section of
+each task summary (see `.cursor/rules/learn-from-mistakes.mdc`).
 
-1. Update the module doc's **Key types**, **Entry points**, and **Tests** sections.
-2. If you add an Isar collection, update [architecture/data-model.md](architecture/data-model.md) and `main.dart` schema list.
-3. If you add a route, update [architecture/navigation-and-auth.md](architecture/navigation-and-auth.md) and the feature's route table.
-4. Follow the project rule: fix + regression test + rulebook delta (see `.cursor/rules/learn-from-mistakes.mdc`).
+### Docs checklist (feature or core change)
+
+1. Update the module doc's **Purpose**, **Entry points**, **Key types**,
+   **Data flow**, **How to extend**, and **Tests** — not only happy-path prose.
+2. New Isar collection or relationship → [architecture/data-model.md](architecture/data-model.md) and the `main.dart` schema list there.
+3. New or moved route → [architecture/navigation-and-auth.md](architecture/navigation-and-auth.md) + the feature doc route table.
+4. New `lib/core/` surface → matching file under [core/](core/).
+5. New platform code → [platform/](platform/).
+6. New regression corpus or test layout → [testing/](testing/).
+7. No existing doc for the area → add one using the 9-section template above.
+
+### Cursor rules checklist
+
+- Repeatable pattern or non-obvious invariant → extend or add `.cursor/rules/<topic>.mdc`.
+- Stale or wrong rule after your change → unlearn (rewrite or delete) in the same task.
+- Bug fix → regression test + rulebook delta (`learn-from-mistakes.mdc`).
+
+### AI entry point
+
+Human and agent onboarding: [AGENTS.md](../../AGENTS.md) at repo root.
