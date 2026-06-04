@@ -10,6 +10,7 @@ import 'package:money_manager/core/notifications/notification_service.dart';
 import 'package:money_manager/core/sms/sms_ingestion_service.dart';
 import 'package:money_manager/features/budgets/data/models/budget_model.dart';
 import 'package:money_manager/features/goals/data/models/goal_model.dart';
+import 'package:money_manager/features/sms/data/models/merchant_identity_model.dart';
 import 'package:money_manager/features/sms/data/models/sms_parsed_transaction.dart';
 import 'package:money_manager/features/sms/data/models/sms_raw_log_model.dart';
 import 'package:money_manager/features/sms/data/models/sms_rule_model.dart';
@@ -31,6 +32,7 @@ Future<void> main() async {
     SmsParsedTransactionSchema,
     SmsRuleModelSchema,
     SmsRawLogModelSchema,
+    MerchantIdentityModelSchema,
   ]);
 
   runApp(

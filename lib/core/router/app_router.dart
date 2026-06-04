@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../navigation/app_back_handler.dart';
 import '../constants/constants.dart';
 import '../../features/auth/domain/auth_state.dart';
 import '../../features/auth/presentation/pin_lock_screen.dart';
@@ -35,8 +36,6 @@ import '../../features/transactions/presentation/screens/manage_categories_scree
 import '../../features/transactions/presentation/screens/account_detail_screen.dart';
 import '../../features/transactions/presentation/screens/reconciliation_screen.dart';
 import '../../features/transactions/presentation/screens/transactions_screen.dart';
-import '../widgets/exit_confirmation_dialog.dart';
-
 part 'app_routes.dart';
 
 /// GoRouter exposed as a Riverpod provider so that the redirect guard can
@@ -343,19 +342,6 @@ class _AppShell extends StatelessWidget {
     return 0;
   }
 
-  Future<void> _handleSystemPop(BuildContext context, int currentIndex) async {
-    // From any non-home tab, the device back button should bring the user
-    // back to Home rather than exit the app.
-    if (currentIndex != 0) {
-      context.go(AppRoutes.dashboard);
-      return;
-    }
-    final shouldExit = await ExitConfirmationDialog.show(context);
-    if (shouldExit) {
-      await SystemNavigator.pop();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
@@ -367,7 +353,10 @@ class _AppShell extends StatelessWidget {
         canPop: false,
         onPopInvokedWithResult: (didPop, _) {
           if (didPop) return;
-          _handleSystemPop(context, currentIndex);
+          AppBackHandler.handleShellBack(
+            context,
+            bottomNavIndex: currentIndex,
+          );
         },
         child: child,
       ),

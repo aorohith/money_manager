@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/database/isar_service.dart';
+import 'core/navigation/app_back_handler.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/theme.dart';
 import 'features/auth/providers/auth_provider.dart';
@@ -101,11 +102,18 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       builder: (context, child) {
-        return Stack(
-          children: [
-            child ?? const SizedBox.shrink(),
-            if (_showPrivacyOverlay) const _PrivacyOverlay(),
-          ],
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (didPop) return;
+            AppBackHandler.handleOutsideShellBack(context);
+          },
+          child: Stack(
+            children: [
+              child ?? const SizedBox.shrink(),
+              if (_showPrivacyOverlay) const _PrivacyOverlay(),
+            ],
+          ),
         );
       },
     );

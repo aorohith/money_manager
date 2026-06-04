@@ -99,9 +99,20 @@ abstract final class SmsMerchantExtractor {
     caseSensitive: false,
   );
 
+  /// Matches any UPI VPA (numeric or alpha handles), e.g. "9562802757@superyes",
+  /// "swiggy@icici", "rohith-1@okicici". Used to populate the identity's
+  /// [upiHandles] list even when the name extractor doesn't find a name.
+  static final standaloneVpaRe = RegExp(
+    r'\b([\w.\-]{2,40}@[A-Za-z]{2,20})\b',
+  );
+
   static const unknownMerchant = 'Unknown Merchant';
 
   static MerchantExtractionResult extract(String text) {
+    // Extract any VPA present in the full text (used regardless of name match).
+    final vpaMatch = standaloneVpaRe.firstMatch(text);
+    final rawVpa = vpaMatch?.group(1);
+
     final tries = <(MerchantExtractionSource, RegExp, bool personIfAt)>[
       (MerchantExtractionSource.upiTo, upiToRe, false),
       (MerchantExtractionSource.infoBlock, infoVendorStarRe, false),
@@ -127,22 +138,27 @@ abstract final class SmsMerchantExtractor {
     for (final (source, re, personIfAt) in tries) {
       final match = re.firstMatch(text);
       if (match == null) continue;
-      var m = SmsNoiseFilter.stripVpaSuffix(match.group(1)?.trim() ?? '');
+      final rawGroup = match.group(1)?.trim() ?? '';
+      // Capture VPA from this specific match if standaloneVpaRe didn't find one.
+      final matchVpa = rawGroup.contains('@') ? rawGroup : rawVpa;
+      var m = SmsNoiseFilter.stripVpaSuffix(rawGroup);
       m = _cleanInfoMerchant(m);
       if (m.isEmpty || SmsNoiseFilter.looksLikeNoise(m)) continue;
-      final hasVpa = match.group(1)?.contains('@') ?? false;
+      final hasVpa = rawGroup.contains('@');
       return MerchantExtractionResult(
         raw: m,
         source: source,
         counterpartyType: (personIfAt || hasVpa) && !m.contains(' ')
             ? SmsCounterpartyType.person
             : SmsCounterpartyType.merchant,
+        vpa: matchVpa,
       );
     }
 
-    return const MerchantExtractionResult(
+    return MerchantExtractionResult(
       raw: unknownMerchant,
       source: MerchantExtractionSource.unknown,
+      vpa: rawVpa,
     );
   }
 

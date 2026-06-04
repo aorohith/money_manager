@@ -2,7 +2,7 @@
 
 ## Purpose
 
-All persistent app data lives in a single **Isar** database (`money_manager`) opened at startup. Eight `@collection` types span transactions, budgets, goals, and SMS. There is no remote sync layer today — `userId` fields are reserved for future use.
+All persistent app data lives in a single **Isar** database (`money_manager`) opened at startup. Nine `@collection` types span transactions, budgets, goals, and SMS. There is no remote sync layer today — `userId` fields are reserved for future use.
 
 ## Entry points
 
@@ -23,6 +23,7 @@ All persistent app data lives in a single **Isar** database (`money_manager`) op
 | `SmsParsedTransaction` | sms | [`sms_parsed_transaction.dart`](../../../lib/features/sms/data/models/sms_parsed_transaction.dart) |
 | `SmsRuleModel` | sms | [`sms_rule_model.dart`](../../../lib/features/sms/data/models/sms_rule_model.dart) |
 | `SmsRawLogModel` | sms | [`sms_raw_log_model.dart`](../../../lib/features/sms/data/models/sms_raw_log_model.dart) |
+| `MerchantIdentityModel` | sms | [`merchant_identity_model.dart`](../../../lib/features/sms/data/models/merchant_identity_model.dart) |
 
 ## Relationships
 
@@ -32,7 +33,9 @@ erDiagram
   TransactionModel ||--o| AccountModel : accountId
   BudgetModel ||--o| CategoryModel : categoryId
   SmsParsedTransaction }o--o| AccountModel : resolvedAccountId
+  SmsParsedTransaction }o--o| MerchantIdentityModel : merchantIdentityId
   SmsRuleModel }o--o| CategoryModel : categoryId
+  MerchantIdentityModel }o--o| CategoryModel : topCategoryId
 ```
 
 ### TransactionModel (central entity)
@@ -65,9 +68,10 @@ Self-contained savings target: name, target amount, current amount, deadline.
 
 | Model | Purpose |
 |-------|---------|
-| `SmsParsedTransaction` | Parsed SMS fields, fingerprint dedup, review/auto-add status |
-| `SmsRuleModel` | User-defined merchant → category rules |
+| `SmsParsedTransaction` | Parsed SMS fields, fingerprint dedup, review/auto-add status. Carries `merchantIdentityId` and `counterpartyVpa`. |
+| `SmsRuleModel` | User-defined merchant → category rules (explicit override, confidence 1.0) |
 | `SmsRawLogModel` | Optional raw SMS audit log (privacy-sensitive) |
+| `MerchantIdentityModel` | Persistent merchant profile: links name variants + UPI handles to one identity; tracks per-category frequency scores for learned category suggestions (confidence 0.85–0.95). Resolved by `lib/core/sms/merchant_resolver.dart`. |
 
 ## Data flow
 

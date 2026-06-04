@@ -104,9 +104,12 @@ Invalid integer IDs in deep links render `_RouteNotFoundScreen` instead of crash
 
 ## Back button behavior
 
-- **Non-home tab:** system back → navigate to `/home`
-- **Home tab:** system back → exit confirmation dialog → `SystemNavigator.pop()`
-- Implemented via `PopScope(canPop: false)` on `_AppShell`
+Handled by `AppBackHandler` (`lib/core/navigation/app_back_handler.dart`):
+
+- **Shell (main app):** pop nested route if `GoRouter.canPop()` → else non-home bottom-nav tab → `/home` → else exit confirmation → `SystemNavigator.pop()`
+- **Outside shell** (splash, onboarding, PIN lock, etc.): pop if possible → else exit confirmation
+- **Shell:** `PopScope(canPop: false)` on `_AppShell`
+- **Outside shell:** `PopScope(canPop: false)` in `App` `MaterialApp.router` builder (inner shell `PopScope` wins when both are mounted)
 
 ## Data flow
 

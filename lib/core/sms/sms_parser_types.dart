@@ -46,9 +46,14 @@ class MerchantExtractionResult {
     required this.raw,
     required this.source,
     this.counterpartyType = SmsCounterpartyType.merchant,
+    this.vpa,
   });
 
   final String raw;
   final MerchantExtractionSource source;
   final SmsCounterpartyType counterpartyType;
+
+  /// Raw UPI VPA found in the message, e.g. "9562802757@superyes".
+  /// Populated before the @-suffix is stripped from [raw].
+  final String? vpa;
 }

@@ -37,7 +37,7 @@ lib/core/widgets/
 | `AppBottomSheet` | Standard sheet wrapper |
 | `LoadingOverlay` | Full-screen or inline loading |
 | `EmptyState` | Zero-data placeholder |
-| `ExitConfirmationDialog` | Home back → exit app |
+| `ExitConfirmationDialog` | Device back when app would exit (`AppBackHandler`) |
 | `ShimmerLoader` | Skeleton loading |
 
 ## Data flow

@@ -35,6 +35,16 @@ Indian DLT templates put the counterparty in `by NAME`, `Info.VPS*MERCHANT`, `Be
 
 **Recipe:** use `(?<![A-Za-z])to\s+` on `upiToRe` and `toMerchantRe`; use `(?<![A-Za-z])at\s+` on `atMerchantRe`.
 
+## UPI VPA identity linking
+
+**Pattern added:** `standaloneVpaRe` in `SmsMerchantExtractor` matches any UPI VPA token in the full SMS text (including numeric handles like `9562802757@superyes` that start with digits — the name-extraction regexes require an alpha start, so they miss these).
+
+- The raw VPA is returned as `MerchantExtractionResult.vpa` and flows into `ParsedSmsData.counterpartyVpa`.
+- `MerchantResolver` stores it in `MerchantIdentityModel.upiHandles` so the same merchant paid via different UPI apps (PhonePe → HDFC, CRED → Utkarsh) resolves to one identity.
+- `MerchantResolver.resolve` match priority: exact key → name alias → UPI handle → fuzzy token overlap (≥2 significant tokens) → create new.
+
+**Key invariant:** `standaloneVpaRe` must run BEFORE the name-extraction loop so numeric VPAs are captured even when no merchant name is found.
+
 ## Test pattern
 
 Add a fixture row for every new template family before shipping regex changes.

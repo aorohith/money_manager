@@ -1,4 +1,5 @@
 import '../../features/transactions/data/models/category_model.dart';
+import '../../features/sms/data/models/merchant_identity_model.dart';
 import '../../features/sms/data/models/sms_rule_model.dart';
 import 'merchant_database.dart';
 
@@ -17,7 +18,13 @@ class CategorizationResult {
   final CategorizationSource source;
 }
 
-enum CategorizationSource { userRule, merchantDatabase, keyword, fallback }
+enum CategorizationSource {
+  userRule,
+  merchantHistory,
+  merchantDatabase,
+  keyword,
+  fallback,
+}
 
 /// Pure categorization engine — no repository dependency.
 ///
@@ -29,7 +36,8 @@ class CategorizationEngine {
   /// Returns the best guess for [merchantKey] given the available [categories].
   ///
   /// Priority:
-  ///   1. [userRule]              (confidence 1.0 — always trusted)
+  ///   1. [userRule]                  (confidence 1.0 — always trusted)
+  ///   1.5 [merchantIdentity] history (confidence 0.95 at ≥3 uses, 0.85 at ≥1)
   ///   2. Built-in merchant database  (confidence 0.90)
   ///   3. Keyword substring match     (confidence 0.65)
   ///   4. "Other" fallback            (confidence 0.30)
@@ -37,6 +45,7 @@ class CategorizationEngine {
     String merchantKey,
     List<CategoryModel> categories, {
     SmsRuleModel? userRule,
+    MerchantIdentityModel? merchantIdentity,
     bool isIncome = false,
   }) {
     final targetCategories =
@@ -49,6 +58,23 @@ class CategorizationEngine {
         confidence: 1.0,
         source: CategorizationSource.userRule,
       );
+    }
+
+    // ── Tier 1.5: learned merchant history ─────────────────────────────────
+    if (merchantIdentity != null &&
+        merchantIdentity.topCategoryId != null &&
+        merchantIdentity.topCategoryScore >= 1) {
+      final catId = merchantIdentity.topCategoryId!;
+      final catExists = targetCategories.any((c) => c.id == catId);
+      if (catExists) {
+        final confidence =
+            merchantIdentity.topCategoryScore >= 3 ? 0.95 : 0.85;
+        return CategorizationResult(
+          categoryId: catId,
+          confidence: confidence,
+          source: CategorizationSource.merchantHistory,
+        );
+      }
     }
 
     // ── Tier 2: built-in merchant database ─────────────────────────────────

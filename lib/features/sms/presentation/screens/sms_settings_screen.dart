@@ -312,9 +312,7 @@ class _SmsSettingsScreenState extends ConsumerState<SmsSettingsScreen>
                               children: [
                                 Text(
                                   'Privacy',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelMedium
+                                  style: Theme.of(context).textTheme.labelMedium
                                       ?.copyWith(fontWeight: FontWeight.w700),
                                 ),
                                 const SizedBox(height: AppSpacing.xs),
@@ -323,8 +321,7 @@ class _SmsSettingsScreenState extends ConsumerState<SmsSettingsScreen>
                                   'notifications (not personal chats). Full message '
                                   'text is cleared when you approve or skip a '
                                   'transaction.',
-                                  style:
-                                      Theme.of(context).textTheme.bodySmall,
+                                  style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ],
                             ),

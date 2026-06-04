@@ -32,6 +32,7 @@ class ParsedSmsData {
     this.counterpartyType = SmsCounterpartyType.unknown,
     this.isRecurring = false,
     this.isInternalTransfer = false,
+    this.counterpartyVpa,
   });
 
   final double amount;
@@ -50,6 +51,10 @@ class ParsedSmsData {
   final SmsCounterpartyType counterpartyType;
   final bool isRecurring;
   final bool isInternalTransfer;
+
+  /// UPI VPA extracted from the SMS (e.g. "9562802757@superyes").
+  /// Used to link transactions to a [MerchantIdentityModel] by handle.
+  final String? counterpartyVpa;
 }
 
 /// Injectable SMS parser — create via [TransactionParser()] or use the
@@ -163,6 +168,7 @@ class TransactionParser {
       isIncome: isIncome,
       merchantExtractionSource: merchant.source,
       counterpartyType: merchant.counterpartyType,
+      counterpartyVpa: merchant.vpa,
       isRecurring: SmsSubscriptionDetector.isLikelySubscription(
         text,
         enabled: detectSubscriptions,

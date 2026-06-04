@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 
-/// Confirmation dialog shown when the user presses the device back button on
-/// the home tab. Returns `true` if the user confirms exit, `false`/`null`
-/// otherwise.
+/// Confirmation dialog shown when the device back button would exit the app.
+/// Returns `true` if the user confirms exit, `false`/`null` otherwise.
 class ExitConfirmationDialog extends StatelessWidget {
   const ExitConfirmationDialog({super.key});
 

@@ -12,6 +12,7 @@ import '../../features/transactions/data/models/category_model.dart';
 import '../../features/transactions/data/models/transaction_model.dart';
 import '../notifications/notification_service.dart';
 import 'categorization_engine.dart';
+import 'merchant_resolver.dart';
 import 'sms_account_resolver.dart';
 import 'sms_auto_add_policy.dart';
 import 'transaction_parser.dart';
@@ -29,6 +30,8 @@ class SmsIngestionService {
   static const _channel = MethodChannel(AppConfig.smsMethodChannel);
   static const _parser = TransactionParser.instance;
   static const _categorizer = CategorizationEngine();
+
+  late final MerchantResolver _resolver = MerchantResolver(_isar);
 
   static const _rateLimit = 20;
   static const _rateWindowMs = 60000;
@@ -77,6 +80,19 @@ class SmsIngestionService {
         return const SmsSyncResult(permissionGranted: false);
       }
 
+      // TEMP: dump every inbox row returned by the device (remove when done debugging).
+      print('[SMS sync] fetched ${rawMessages.length} message(s) from device');
+      for (var i = 0; i < rawMessages.length; i++) {
+        final m = Map<String, dynamic>.from(rawMessages[i] as Map);
+        print(
+          '[SMS sync ${i + 1}/${rawMessages.length}] '
+          'sender=${m['sender']} | '
+          'title=${m['title']} | '
+          'body=${m['body']} | '
+          'timestamp=${m['timestamp']}',
+        );
+      }
+
       var queued = 0;
       for (final raw in rawMessages) {
         final message = Map<String, dynamic>.from(raw as Map);
@@ -118,7 +134,19 @@ class SmsIngestionService {
       isIncome: pending.isIncome,
       note: note ?? pending.merchantRaw,
     );
-    return _repo.approveTransaction(smsId: pending.id, tx: tx);
+    final txId = await _repo.approveTransaction(
+      smsId: pending.id,
+      tx: tx,
+      merchantKey: pending.merchantNormalized,
+      categoryId: categoryId,
+    );
+    if (pending.merchantIdentityId != null) {
+      await _resolver.recordCategoryChoice(
+        pending.merchantIdentityId!,
+        categoryId,
+      );
+    }
+    return txId;
   }
 
   Future<dynamic> _onMethodCall(MethodCall call) async {
@@ -195,10 +223,20 @@ class SmsIngestionService {
 
     final userRule = await _repo.findRule(parsed.merchantNormalized);
     final categories = await _isar.categoryModels.where().findAll();
+
+    // Resolve merchant identity — links name variants and UPI handles across
+    // different bank messages to a single profile, enabling learned suggestions.
+    final resolveResult = await _resolver.resolve(
+      canonicalKey: parsed.merchantNormalized,
+      displayName: parsed.merchantRaw,
+      vpa: parsed.counterpartyVpa,
+    );
+
     final result = _categorizer.categorize(
       parsed.merchantNormalized,
       categories,
       userRule: userRule,
+      merchantIdentity: resolveResult.identity,
       isIncome: parsed.isIncome,
     );
 
@@ -223,6 +261,8 @@ class SmsIngestionService {
       merchantExtractionSource: parsed.merchantExtractionSource?.name,
       counterpartyType: parsed.counterpartyType,
       isRecurring: parsed.isRecurring,
+      merchantIdentityId: resolveResult.identity.id,
+      counterpartyVpa: parsed.counterpartyVpa,
     );
 
     final autoApprove = SmsAutoAddPolicy.shouldAutoApprove(
@@ -254,9 +294,14 @@ class SmsIngestionService {
           categoryId: result.categoryId,
           alwaysApply: userRule != null,
         );
+        await _resolver.recordCategoryChoice(
+          resolveResult.identity.id,
+          result.categoryId,
+        );
         if (showDetectedNotification) {
-          final cat =
-              categories.where((c) => c.id == result.categoryId).firstOrNull;
+          final cat = categories
+              .where((c) => c.id == result.categoryId)
+              .firstOrNull;
           unawaited(
             NotificationService.instance.showSmsDetectedAlert(
               merchant: '${parsed.merchantNormalized} (saved)',

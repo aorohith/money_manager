@@ -163,6 +163,70 @@ const Map<String, String> kMerchantCategoryNames = {
   'ARCHIES': 'Gifts',
   'FERNS N PETALS': 'Gifts',
   'IGIFTFLOWER': 'Gifts',
+
+  // ── Finance / Bill Payments ────────────────────────────────────────────────
+  'CRED': 'Finance',
+  'DREAMPLUG': 'Finance',
+  'DREAMPLUG PAYTECH': 'Finance',
+  'DREAMPLUG PAYTECH SOLUT': 'Finance',
+  'PAYTM': 'Finance',
+  'PHONEPE': 'Finance',
+  'GOOGLEPAY': 'Finance',
+  'GOOGLE PAY': 'Finance',
+  'MOBIKWIK': 'Finance',
+  'FREECHARGE': 'Finance',
+  'CRED WALLET': 'Finance',
+
+  // ── Insurance ─────────────────────────────────────────────────────────────
+  'STAR HEALTH': 'Health',
+  'STAR HEALTH INSURANCE': 'Health',
+  'LIC': 'Finance',
+  'HDFC LIFE': 'Finance',
+  'ICICI PRUDENTIAL': 'Finance',
+  'POLICYBAZAAR': 'Finance',
+  'BAJAJ ALLIANZ': 'Finance',
+
+  // ── Investments / Mutual Funds ─────────────────────────────────────────────
+  'PPFAS': 'Finance',
+  'PPFAS MF': 'Finance',
+  'PPFASMF': 'Finance',
+  'ZERODHA': 'Finance',
+  'GROWW': 'Finance',
+  'COIN': 'Finance',
+  'KUVERA': 'Finance',
+  'ETMONEY': 'Finance',
+  'UPSTOX': 'Finance',
+
+  // ── Cinemas ───────────────────────────────────────────────────────────────
+  'AASHIRVAD CINEPLEXX': 'Entertainment',
+  'AASHIRVAD': 'Entertainment',
+
+  // ── Internet / Broadband ──────────────────────────────────────────────────
+  'JIOFIBER': 'Utilities',
+  'JIOAIRFIBER': 'Utilities',
+  'JIONET': 'Utilities',
+  'ACTFIBER': 'Utilities',
+  'HATHWAY': 'Utilities',
+  'SPECTRANET': 'Utilities',
+  'TIKONA': 'Utilities',
+
+  // ── Quick Commerce / Grocery ──────────────────────────────────────────────
+  'SWIGGY INSTAMART': 'Shopping',
+  'DUNZO DAILY': 'Shopping',
+  'BLINKIT GROCERY': 'Shopping',
+
+  // ── Fuel ──────────────────────────────────────────────────────────────────
+  'INDIAN OIL CORP': 'Transport',
+  'BHARAT PETROLEUM': 'Transport',
+  'HINDUSTAN PETROLEUM': 'Transport',
+  'IOC': 'Transport',
+
+  // ── Rides / EV ────────────────────────────────────────────────────────────
+  'NAMMA YATRI': 'Transport',
+  'BLUESTAR': 'Transport',
+  'ATHER': 'Transport',
+  'OLA ELECTRIC': 'Transport',
+  'TESLA': 'Transport',
 };
 
 /// Keyword → category name fallback (used when merchant is not in the DB).
@@ -254,4 +318,25 @@ const Map<String, String> kKeywordCategoryNames = {
   'gym': 'Sports & Fitness',
   'fitness': 'Sports & Fitness',
   'sport': 'Sports & Fitness',
+
+  // Finance / Payments
+  'insurance': 'Finance',
+  'mutual fund': 'Finance',
+  'investment': 'Finance',
+  'trading': 'Finance',
+  'wallet': 'Finance',
+  'loan emi': 'Finance',
+  'credit card': 'Finance',
+  'supercard': 'Finance',
+
+  // Cinemas
+  'cineplex': 'Entertainment',
+  'cineplexx': 'Entertainment',
+  'multiplex': 'Entertainment',
+  'imax': 'Entertainment',
+
+  // Internet / Broadband
+  'fiber': 'Utilities',
+  'airfiber': 'Utilities',
+  'wifi': 'Utilities',
 };

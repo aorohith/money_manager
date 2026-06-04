@@ -2,6 +2,7 @@ import 'package:isar/isar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../transactions/data/models/transaction_model.dart';
+import '../models/merchant_identity_model.dart';
 import '../models/sms_parsed_transaction.dart';
 import '../models/sms_raw_log_model.dart';
 import '../models/sms_rule_model.dart';
@@ -261,6 +262,40 @@ class SmsRepository {
       if (old.isEmpty) return;
       await _isar.smsRawLogModels.deleteAll(old.map((e) => e.id).toList());
     });
+  }
+
+  // ── MerchantIdentityModel ───────────────────────────────────────────────────
+
+  Future<MerchantIdentityModel?> findMerchantByKey(String canonicalKey) {
+    return _isar.merchantIdentityModels
+        .filter()
+        .canonicalKeyEqualTo(canonicalKey)
+        .findFirst();
+  }
+
+  Stream<List<MerchantIdentityModel>> watchAllMerchants() {
+    return _isar.merchantIdentityModels
+        .where()
+        .sortByDisplayName()
+        .watch(fireImmediately: true);
+  }
+
+  Future<List<MerchantIdentityModel>> getAllMerchants() {
+    return _isar.merchantIdentityModels.where().sortByDisplayName().findAll();
+  }
+
+  Future<void> updateMerchantDisplayName(int id, String displayName) async {
+    await _isar.writeTxn(() async {
+      final identity = await _isar.merchantIdentityModels.get(id);
+      if (identity == null) return;
+      identity.displayName = displayName;
+      identity.isUserNamed = true;
+      await _isar.merchantIdentityModels.put(identity);
+    });
+  }
+
+  Future<void> deleteMerchantIdentity(int id) async {
+    await _isar.writeTxn(() => _isar.merchantIdentityModels.delete(id));
   }
 
   // ── Settings ────────────────────────────────────────────────────────────────

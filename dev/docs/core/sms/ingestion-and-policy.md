@@ -12,6 +12,7 @@ Coordinates the **end-to-end SMS pipeline** after platform delivery: validate �
 | [`lib/main.dart`](../../../../lib/main.dart) | `SmsIngestionService(...).initialize()` post-frame |
 | [`lib/core/sms/sms_auto_add_policy.dart`](../../../../lib/core/sms/sms_auto_add_policy.dart) | Auto-approve rules |
 | [`lib/core/sms/sms_account_resolver.dart`](../../../../lib/core/sms/sms_account_resolver.dart) | Map account hint → `AccountModel` |
+| [`lib/core/sms/merchant_resolver.dart`](../../../../lib/core/sms/merchant_resolver.dart) | Resolve/create `MerchantIdentityModel` by name + UPI handle |
 
 Method channel: `AppConfig.smsMethodChannel` (`com.rapps.moneymanager/sms`)
 
@@ -22,6 +23,7 @@ lib/core/sms/
 ├── sms_ingestion_service.dart
 ├── sms_auto_add_policy.dart
 ├── sms_account_resolver.dart
+├── merchant_resolver.dart
 ├── transaction_parser.dart
 └── categorization_engine.dart
 ```
@@ -33,7 +35,8 @@ lib/core/sms/
 | `SmsIngestionService` | `initialize`, `syncInbox`, `approve`, `_processNotification` |
 | `SmsAutoAddPolicy.shouldAutoApprove` | Uses `SmsSettings`, confidence thresholds, user rules |
 | `SmsAccountResolver.resolve` | Last-4 hint → account; fallback default account |
-| `CategorizationEngine` | Suggest category from merchant + rules |
+| `MerchantResolver` | Resolves name+VPA → `MerchantIdentityModel`; 4-tier match (exact / alias / UPI handle / fuzzy) |
+| `CategorizationEngine` | Suggest category: user rule (1.0) → identity history (0.85–0.95) → DB (0.90) → keyword (0.65) → fallback (0.30) |
 | Rate limit | 20 events / 60 seconds (live notifications) |
 
 ### Auto-add modes (`SmsAutoAddMode`)
@@ -54,6 +57,7 @@ sequenceDiagram
   participant Channel as MethodChannel
   participant Ingest as SmsIngestionService
   participant Parser as TransactionParser
+  participant Resolver as MerchantResolver
   participant Cat as CategorizationEngine
   participant Policy as SmsAutoAddPolicy
   participant Repo as SmsRepository
@@ -61,15 +65,18 @@ sequenceDiagram
 
   Android->>Channel: onNotification / syncSmsInbox
   Channel->>Ingest: _processNotification
-  Ingest->>Parser: parse body
-  Parser-->>Ingest: ParsedSmsData
+  Ingest->>Parser: parse body (extracts VPA too)
+  Parser-->>Ingest: ParsedSmsData (incl. counterpartyVpa)
   Ingest->>Repo: fingerprint dedup check
-  Ingest->>Cat: suggest category
+  Ingest->>Resolver: resolve(canonicalKey, vpa)
+  Resolver-->>Ingest: MerchantIdentityModel (found or created)
+  Ingest->>Cat: suggest category (identity scores + rules)
   Ingest->>Policy: shouldAutoApprove?
   alt auto approve
     Ingest->>Repo: create TransactionModel
+    Ingest->>Resolver: recordCategoryChoice
   else pending review
-    Ingest->>Repo: save SmsParsedTransaction
+    Ingest->>Repo: save SmsParsedTransaction (+ merchantIdentityId)
     Ingest->>Notif: showSmsDetectedAlert
   end
 ```

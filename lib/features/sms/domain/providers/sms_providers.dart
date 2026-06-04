@@ -17,17 +17,15 @@ final smsRepositoryProvider = Provider<SmsRepository>((ref) {
 
 // ── Pending queue (live stream) ───────────────────────────────────────────────
 
-final smsPendingProvider =
-    StreamProvider<List<SmsParsedTransaction>>((ref) {
+final smsPendingProvider = StreamProvider<List<SmsParsedTransaction>>((ref) {
   return ref.read(smsRepositoryProvider).watchPending();
 });
 
 /// Badge count — number of pending SMS transactions awaiting review.
 final smsPendingCountProvider = Provider<int>((ref) {
-  return ref.watch(smsPendingProvider).maybeWhen(
-        data: (list) => list.length,
-        orElse: () => 0,
-      );
+  return ref
+      .watch(smsPendingProvider)
+      .maybeWhen(data: (list) => list.length, orElse: () => 0);
 });
 
 // ── Merchant rules ────────────────────────────────────────────────────────────
@@ -56,27 +54,30 @@ class SmsSettingsNotifier extends AsyncNotifier<SmsSettings> {
   Future<void> setEnabled(bool v) async =>
       save((state.valueOrNull ?? const SmsSettings()).copyWith(enabled: v));
 
-  Future<void> setAutoAddMode(SmsAutoAddMode v) async => save(
-      (state.valueOrNull ?? const SmsSettings()).copyWith(autoAddMode: v));
+  Future<void> setAutoAddMode(SmsAutoAddMode v) async =>
+      save((state.valueOrNull ?? const SmsSettings()).copyWith(autoAddMode: v));
 
   Future<void> setConfidenceThreshold(int v) async => save(
-      (state.valueOrNull ?? const SmsSettings())
-          .copyWith(confidenceThreshold: v));
+    (state.valueOrNull ?? const SmsSettings()).copyWith(confidenceThreshold: v),
+  );
 
   Future<void> setDetectSubscriptions(bool v) async => save(
-      (state.valueOrNull ?? const SmsSettings())
-          .copyWith(detectSubscriptions: v));
+    (state.valueOrNull ?? const SmsSettings()).copyWith(detectSubscriptions: v),
+  );
 
   Future<void> setDetectRefunds(bool v) async => save(
-      (state.valueOrNull ?? const SmsSettings()).copyWith(detectRefunds: v));
+    (state.valueOrNull ?? const SmsSettings()).copyWith(detectRefunds: v),
+  );
 
   Future<void> setShowParseDebug(bool v) async => save(
-      (state.valueOrNull ?? const SmsSettings()).copyWith(showParseDebug: v));
+    (state.valueOrNull ?? const SmsSettings()).copyWith(showParseDebug: v),
+  );
 }
 
 final smsSettingsProvider =
     AsyncNotifierProvider<SmsSettingsNotifier, SmsSettings>(
-        SmsSettingsNotifier.new);
+      SmsSettingsNotifier.new,
+    );
 
 // ── Notification-listener permission ─────────────────────────────────────────
 
@@ -84,8 +85,9 @@ const _smsChannel = MethodChannel(AppConfig.smsMethodChannel);
 
 final smsPermissionProvider = FutureProvider.autoDispose<bool>((ref) async {
   try {
-    return await _smsChannel
-            .invokeMethod<bool>('isNotificationListenerEnabled') ??
+    return await _smsChannel.invokeMethod<bool>(
+          'isNotificationListenerEnabled',
+        ) ??
         false;
   } on PlatformException {
     return false;

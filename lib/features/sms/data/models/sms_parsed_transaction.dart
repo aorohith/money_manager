@@ -27,6 +27,8 @@ class SmsParsedTransaction {
     this.merchantExtractionSource,
     this.counterpartyType = SmsCounterpartyType.unknown,
     this.isRecurring = false,
+    this.merchantIdentityId,
+    this.counterpartyVpa,
   });
 
   Id id = Isar.autoIncrement;
@@ -82,6 +84,13 @@ class SmsParsedTransaction {
   SmsCounterpartyType counterpartyType = SmsCounterpartyType.unknown;
 
   bool isRecurring = false;
+
+  /// Links this record to a [MerchantIdentityModel] for identity-based
+  /// suggestions and category scoring.
+  int? merchantIdentityId;
+
+  /// UPI VPA extracted from the message, e.g. "9562802757@superyes".
+  String? counterpartyVpa;
 
   DateTime detectedAt = DateTime.now();
   DateTime updatedAt = DateTime.now();
