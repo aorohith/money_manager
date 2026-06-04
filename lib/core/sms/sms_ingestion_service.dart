@@ -80,19 +80,6 @@ class SmsIngestionService {
         return const SmsSyncResult(permissionGranted: false);
       }
 
-      // TEMP: dump every inbox row returned by the device (remove when done debugging).
-      print('[SMS sync] fetched ${rawMessages.length} message(s) from device');
-      for (var i = 0; i < rawMessages.length; i++) {
-        final m = Map<String, dynamic>.from(rawMessages[i] as Map);
-        print(
-          '[SMS sync ${i + 1}/${rawMessages.length}] '
-          'sender=${m['sender']} | '
-          'title=${m['title']} | '
-          'body=${m['body']} | '
-          'timestamp=${m['timestamp']}',
-        );
-      }
-
       var queued = 0;
       for (final raw in rawMessages) {
         final message = Map<String, dynamic>.from(raw as Map);

@@ -80,6 +80,17 @@ void main() {
         }
       }
 
+      final merchantNotContains = row['merchantNotContains'] as String?;
+      if (merchantNotContains != null &&
+          parsed.merchantNormalized.contains(
+            merchantNotContains.toUpperCase(),
+          )) {
+        failures.add(
+          '$id: merchant ${parsed.merchantNormalized} '
+          'should NOT contain $merchantNotContains (call-to-action noise)',
+        );
+      }
+
       final paymentMethod = row['paymentMethod'] as String?;
       if (paymentMethod != null &&
           parsed.paymentMethod != paymentMethod) {

@@ -4,7 +4,7 @@ import 'noise_filter.dart';
 /// Priority-ordered merchant extraction for Indian bank SMS.
 abstract final class SmsMerchantExtractor {
   static final upiToRe = RegExp(
-    r'(?:UPI[-\s]?|paid\s+to\s+|sent\s+to\s+|to\s+VPA\s+|via\s+UPI\s+(?:on\s+)?\d{1,2}[-/]\d{1,2}(?:[-/]\d{2,4})?\s+to\s+|(?<![A-Za-z])to\s+(?!your\b|account\b|a/c\b|the\b))([A-Za-z][A-Za-z0-9\s&@._\-]{2,40}?)(?:\s+(?:on|via|ref|Ref|\.|UPI|\d|\()|$)',
+    r'(?:UPI[-\s]?|paid\s+to\s+|sent\s+to\s+|to\s+VPA\s+|via\s+UPI\s+(?:on\s+)?\d{1,2}[-/]\d{1,2}(?:[-/]\d{2,4})?\s+to\s+|(?<![A-Za-z])to\s+(?!your\b|account\b|a/c\b|the\b|dispute\b|block\b|report\b|register\b|avail\b|track\b|visit\b|check\b|know\b|get\b))([A-Za-z][A-Za-z0-9\s&@._\-]{2,40}?)(?:\s+(?:on|via|ref|Ref|\.|UPI|\d|\()|$)',
     caseSensitive: false,
   );
 
@@ -89,7 +89,7 @@ abstract final class SmsMerchantExtractor {
   );
 
   static final toMerchantRe = RegExp(
-    r'(?<![A-Za-z])to\s+(?!your\b|account\b|a/c\b|the\b|beneficiary\b)([A-Za-z][A-Za-z0-9\s&\-]{2,30}?)(?:\s+(?:from|via|on|ref|\.)|\.|$)',
+    r'(?<![A-Za-z])to\s+(?!your\b|account\b|a/c\b|the\b|beneficiary\b|dispute\b|block\b|report\b|register\b|avail\b|track\b|visit\b|check\b|know\b|get\b)([A-Za-z][A-Za-z0-9\s&\-]{2,30}?)(?:\s+(?:from|via|on|ref|\.)|\.|$)',
     caseSensitive: false,
   );
 

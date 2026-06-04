@@ -45,6 +45,18 @@ Indian DLT templates put the counterparty in `by NAME`, `Info.VPS*MERCHANT`, `Be
 
 **Key invariant:** `standaloneVpaRe` must run BEFORE the name-extraction loop so numeric VPAs are captured even when no merchant name is found.
 
+## Call-to-action footer noise (Utkarsh / other banks)
+
+**Mistake:** "dispute call" extracted as merchant from Utkarsh messages ending with `"To dispute call 18003097986 - Utkarsh SFBL"`.
+
+**Root cause:** `upiToRe`'s `to\s+` fallback lacked `dispute` in the negative lookahead. The capture boundary `\s+\d` fired on `" 1"` (start of phone number), yielding `"dispute call"` — no digits, so noise filter passed it.
+
+**Recipe (two layers):**
+1. Extend the negative lookahead in **both** `upiToRe` and `toMerchantRe` to exclude call-to-action verbs: `dispute|block|report|register|avail|track|visit|check|know|get`.
+2. Add `_callToActionStarts` list in `SmsNoiseFilter.looksLikeNoise` as a backstop for any pattern that escapes the lookahead.
+
+**Test pattern:** add a corpus row with `"merchantNotContains": "dispute"` for each bank that appends a dispute-call footer (Utkarsh: `"...To dispute call 18003097986 - Utkarsh SFBL"`).
+
 ## Test pattern
 
-Add a fixture row for every new template family before shipping regex changes.
+Add a fixture row for every new template family before shipping regex changes. Use `merchantNotContains` for negative assertions (call-to-action noise that must never become a merchant).

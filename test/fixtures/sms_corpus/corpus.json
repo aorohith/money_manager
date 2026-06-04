@@ -619,5 +619,29 @@
     "id": "reject_subscription_offer",
     "text": "Subscribe Netflix at Rs 199/mo. No charge yet",
     "expectParse": false
+  },
+  {
+    "id": "utkarsh_upi_no_merchant",
+    "text": "Dear Rohith, your SuperCard 9598 debited for INR 210.00 on 04 Jun 01:27 PM for UPI - 615521250823. To dispute call 18003097986 - Utkarsh SFBL",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 210.0,
+    "merchantNotContains": "dispute"
+  },
+  {
+    "id": "utkarsh_at_merchant",
+    "text": "INR 1028.50 was spent on your SuperCard at DREAMPLUG PAYTECH SOLUT. Available credit limit: INR 1279.62. Details: https://2s.ms/UTKSPR/krv -Utkarsh SFBL",
+    "expectParse": true,
+    "direction": "expense",
+    "amount": 1028.5,
+    "merchantContains": "DREAMPLUG"
+  },
+  {
+    "id": "utkarsh_refund",
+    "text": "Refund Alert! INR 463.00 credited to your SuperCard ending with 9598 from Flipkart Payments - Utkarsh SFBL",
+    "expectParse": true,
+    "direction": "income",
+    "amount": 463.0,
+    "merchantContains": "FLIPKART"
   }
 ]
