@@ -7,7 +7,7 @@ import 'package:money_manager/core/constants/constants.dart';
 
 import '../../features/sms/data/models/sms_parsed_transaction.dart';
 import '../../features/sms/data/repositories/sms_repository.dart';
-import '../../features/sms/domain/models/sms_settings.dart';
+import '../../features/transactions/data/models/account_model.dart';
 import '../../features/transactions/data/models/category_model.dart';
 import '../../features/transactions/data/models/transaction_model.dart';
 import '../notifications/notification_service.dart';

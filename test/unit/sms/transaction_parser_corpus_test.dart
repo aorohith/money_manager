@@ -30,8 +30,11 @@ void main() {
       final parsed = parser.parse(text);
 
       if (!expectParse) {
-        if (parsed == null) rejectOk++;
-        else failures.add('$id: expected reject, got parse');
+        if (parsed == null) {
+          rejectOk++;
+        } else {
+          failures.add('$id: expected reject, got parse');
+        }
         continue;
       }
 

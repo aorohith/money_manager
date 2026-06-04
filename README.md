@@ -1,16 +1,25 @@
-# money_manager
+# Money Manager
 
-A new Flutter project.
+A local-first personal finance app built with Flutter. Track transactions, budgets, and goals; analyze spending; import bank exports; and auto-parse transaction SMS on Android.
 
-## Getting Started
+## Getting started
 
-This project is a starting point for a Flutter application.
+```bash
+flutter pub get
+flutter pub run build_runner build --delete-conflicting-outputs   # if needed
+flutter run
+```
 
-A few resources to get you started if this is your first Flutter project:
+## Documentation & tools
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Developer docs, scripts, and testing standards: **[dev/README.md](dev/README.md)**
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Full module reference: **[dev/docs/README.md](dev/docs/README.md)**
+
+## Tech stack
+
+- Flutter 3+ / Dart 3
+- Riverpod — state management
+- Isar — local database
+- GoRouter — navigation
+- local_auth + flutter_secure_storage — PIN and biometrics

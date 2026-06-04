@@ -12,8 +12,8 @@ rewrites the data so:
 * Whitespace is trimmed everywhere.
 * Rows are sorted newest-first for a more human-friendly preview.
 
-Run:
-    python3 tool/clean_import_sample.py \
+Run (from repo root):
+    python3 dev/tool/clean_import_sample.py \
         --src "/Users/rohith/Downloads/2026_05_09_01_43_24_529254 (1).xlsx" \
         --out "/Users/rohith/Downloads/money_manager_import_sample_cleaned.xlsx"
 """

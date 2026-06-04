@@ -1,5 +1,7 @@
 # Testing Standards
 
+> Full testing docs: [docs/testing/overview.md](docs/testing/overview.md) and [docs/testing/running-tests.md](docs/testing/running-tests.md)
+
 ## Mandatory For Every Feature/UI Change
 
 - Add test cases for all new logic/UI behavior.

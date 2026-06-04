@@ -265,10 +265,6 @@ abstract final class SmsDirectionScorer {
     final creditScore =
         creditMatches.fold<int>(0, (s, m) => s + m.weight);
 
-    final hasStrongDebit =
-        debitMatches.any((m) => strongDebitSignals.contains(m.label));
-    final hasStrongCredit =
-        creditMatches.any((m) => strongCreditSignals.contains(m.label));
     if (closestDebit != null &&
         closestCredit != null &&
         closestDebit == closestCredit) {

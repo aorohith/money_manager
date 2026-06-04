@@ -6,10 +6,16 @@ import 'package:money_manager/core/sms/extraction/direction_scorer.dart';
 import 'package:money_manager/core/sms/extraction/rejection_filter.dart';
 import 'package:money_manager/core/sms/transaction_parser.dart';
 
+/// Project root — script lives at dev/tool/corpus_debug.dart.
+Directory get _projectRoot =>
+    File(Platform.script.toFilePath()).parent.parent.parent;
+
 void main() {
   const parser = TransactionParser();
+  final corpusPath =
+      '${_projectRoot.path}/test/fixtures/sms_corpus/corpus.json';
   final corpus = (jsonDecode(
-    File('test/fixtures/sms_corpus/corpus.json').readAsStringSync(),
+    File(corpusPath).readAsStringSync(),
   ) as List)
       .cast<Map<String, dynamic>>();
 

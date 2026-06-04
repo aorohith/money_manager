@@ -1,7 +1,6 @@
 import '../../features/sms/data/models/sms_rule_model.dart';
 import '../../features/sms/domain/models/sms_settings.dart';
 import 'extraction/merchant_extractor.dart';
-import 'sms_parser_types.dart';
 import 'transaction_parser.dart';
 
 /// Decides whether an ingested SMS should be auto-approved.

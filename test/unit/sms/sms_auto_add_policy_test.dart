@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_manager/core/sms/sms_auto_add_policy.dart';
-import 'package:money_manager/core/sms/sms_parser_types.dart';
 import 'package:money_manager/core/sms/transaction_parser.dart';
 import 'package:money_manager/features/sms/data/models/sms_rule_model.dart';
 import 'package:money_manager/features/sms/domain/models/sms_settings.dart';
